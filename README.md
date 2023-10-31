@@ -1,4 +1,9 @@
 # SC3020_Project_2
+Create python virtual environment using
+````
+python3 -m venv project2 
+````
+
 activate python virtual environment using
 ````
 source project2/bin/activate
