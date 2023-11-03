@@ -3,8 +3,8 @@ from flask import Flask, jsonify, request, make_response
 from flask_restful import Resource, Api
 import psycopg2
 
-PORTNUMBER = 5340
-PASSWORD = 'banach'
+PORTNUMBER = 5342
+PASSWORD = 'password'
 USER = 'postgres'
 
 # creating the flask app
