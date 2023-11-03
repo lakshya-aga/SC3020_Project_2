@@ -3,6 +3,9 @@ from flask import Flask, jsonify, request, make_response
 from flask_restful import Resource, Api
 import psycopg2
 
+PORTNUMBER = 5340
+PASSWORD = 'banach'
+USER = 'postgres'
 
 # creating the flask app
 app = Flask(__name__)
@@ -37,7 +40,7 @@ class ExplainService(Resource):
 
         # Establish the connection
         conn = psycopg2.connect(
-            database="postgres", user='postgres', password='password', host='127.0.0.1', port='5432'
+            database="postgres", user=USER, password=USER, host='127.0.0.1', port=PORTNUMBER
         )
         #
         cursor = conn.cursor()
