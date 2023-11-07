@@ -4,6 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 // This is a simplified example of an org chart with a depth of 2.
 // Note how deeper levels are defined recursively via the `children` property.
+//Replace With actual Query Response
 const sample = {
       "Node Type": "Aggregate",
       
@@ -128,9 +129,10 @@ function renameKeys(json) {
     return json;
   }
 }
-var dataChart = renameKeys(sample);
 
-export default function OrgChartTree() {
+
+export default function OrgChartTree(sample) {
+  var dataChart = renameKeys(sample);
   const [clickedNode, setClickedNode] = useState(null);
 
   // Event handler for node click

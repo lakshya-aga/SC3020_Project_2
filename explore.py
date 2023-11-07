@@ -13,6 +13,7 @@ app = Flask(__name__)
 api = Api(app)
 
 
+
 # making a class for a particular resource
 # the get, post methods correspond to get and post requests
 # they are automatically mapped by flask_restful.
@@ -53,6 +54,7 @@ class ExplainService(Resource):
             response.status_code = 400
             return response
         response = cursor.fetchall()[0]
+        print(response)
         #response.status_code = 200
         return response
         #
