@@ -150,8 +150,8 @@ export default function OrgChartTree(sample) {
     <div>
       <div id="treeWrapper" style={{
         alignItems: 'center',
-        width: '1000vw',
-        height: '1000vh',
+        width: '50vw',
+        height: '50vh',
       }}>
         <Tree 
           data={dataChart}
@@ -163,9 +163,10 @@ export default function OrgChartTree(sample) {
       </div>
       <div>
         {clickedNode && (
-          <pre>
-            Clicked Node Data:
-          </pre>
+          <div>
+            Clicked Node Data: {clickedNode["depth"]}
+            <div>Also- Kiss my Piss</div>
+          </div>
         )}
       </div>
     </div>

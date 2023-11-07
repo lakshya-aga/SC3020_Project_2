@@ -1,8 +1,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import OrgChartTree from "./QepVisualization.js";
 import Box from "./QueryInput.js";
-
+import {Login} from "./Login.jsx";
 
 function Routing() {
   return (
@@ -10,7 +9,7 @@ function Routing() {
     <BrowserRouter>
     <Routes>
         <Route path="/" element={<Box />} />
-        <Route path="explain" element={<OrgChartTree />} />
+        <Route path="/login" element={<Login />} />
     </Routes>
   </BrowserRouter>
   );
