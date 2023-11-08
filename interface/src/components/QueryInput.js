@@ -20,7 +20,7 @@ const SqlQueryInput = () => {
         value={sqlQuery}
         onChange={handleQueryChange}
       ></textarea>
-      <button className="btn btn-primary mt-2" onClick={handleExecuteQuery}>
+      <button className="btn btn-info mt-2" onClick={handleExecuteQuery}>
         Execute Query
       </button>
     </div>
