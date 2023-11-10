@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import axios from 'axios';
+
 
 const SqlQueryInput = () => {
   const [sqlQuery, setSqlQuery] = useState('');
@@ -7,9 +9,23 @@ const SqlQueryInput = () => {
     setSqlQuery(event.target.value);
   };
 
-  const handleExecuteQuery = () => {
-    console.log('Executing SQL query:', sqlQuery);
+  
+  const handleExecuteQuery = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post("http://127.0.0.1:5000/explain", {
+      sql: sqlQuery
+      });
+      console.log("Response:", response.data);
+    } catch (error) {
+      console.error("Error executing SQL query:", error);
+  
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+      }
+    }
   };
+
 
   return (
     <div className="mb-3">
