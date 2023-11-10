@@ -1,70 +1,84 @@
-# using flask_restful
-from flask import Flask, jsonify, request, make_response
-from flask_restful import Resource, Api
+from flask import Flask, jsonify, request
+from flask_restful import Api, Resource
+from flask_cors import CORS, cross_origin
 import psycopg2
+import logging
 
-PORTNUMBER = 5342
-PASSWORD = 'password'
-USER = 'postgres'
+PORTNUMBER = "5430"
+PASSWORD = "banach"
+USER = "postgres"
 
-# creating the flask app
 app = Flask(__name__)
-# creating an API object
-api = Api(app)
+cors = CORS(app, resources={r"/explain": {"origins": "*"}})
+app.config['CORS_HEADERS'] = 'Content-Type'
+
+@app.route('/explain', methods=['GET'])
+@cross_origin(origin='*',headers=['Content-Type','Authorization'])
+def get(self):
+    response = jsonify({'message': 'Use Post to send SQL'})
+    response.status_code = 400
+    return response
 
 
+<<<<<<< HEAD
 
 # making a class for a particular resource
 # the get, post methods correspond to get and post requests
 # they are automatically mapped by flask_restful.
 # other methods include put, delete, etc.
 class ExplainService(Resource):
+=======
+@app.route('/explain', methods=['POST'])
+@cross_origin(origin='*',headers=['Content-Type','Authorization'])
+def post():
+    request_json = request.get_json()
+    query_sql = request_json.get("sql")
+>>>>>>> Anushree
 
-    # corresponds to the GET request.
-    # this function is called whenever there
-    # is a GET request for this resource
-    def get(self):
-
-        response = jsonify({'message': 'Use Post to send SQL'})
+    if query_sql is None:
+        response = jsonify({'message': 'Send SQL in Request !!  '})
         response.status_code = 400
         return response
 
-    # Corresponds to POST request
-    def post(self):
-        requestJSON = request.get_json()  # status code
-        querySQL = requestJSON.get("sql")
-        if querySQL is None:
-            response = jsonify({'message': 'Send SQL in Request !!  '})
-            response.status_code = 400
-            return response
-        explainQuerySQL = "explain (analyze, verbose, BUFFERS, FORMAT json) " + querySQL
+    explain_query_sql = "explain (analyze, verbose, BUFFERS, FORMAT json) " + query_sql
 
-        # Establish the connection
+    try:
         conn = psycopg2.connect(
-            database="postgres", user=USER, password=USER, host='127.0.0.1', port=PORTNUMBER
+            database="postgres", user=USER, password=PASSWORD, host='127.0.0.1', port=PORTNUMBER
         )
-        #
+
         cursor = conn.cursor()
         cursor.execute("SET search_path TO tpch1g")
-        try :
-            cursor.execute(explainQuerySQL)
-        except Exception as err:
+        cursor.execute(explain_query_sql)
+        response_data = cursor.fetchall()[0]
 
+<<<<<<< HEAD
             response = jsonify({'message': str(err)})
             response.status_code = 400
             return response
         response = cursor.fetchall()[0]
         print(response)
         #response.status_code = 200
+=======
+        response = jsonify(response_data)
+        response.status_code = 200
+        # response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'POST')
+        print(response_data)
+>>>>>>> Anushree
         return response
-        #
+
+    except Exception as err:
+        response = jsonify({'message': str(err)})
+        response.status_code = 400
+        return response
+
+    finally:
         conn.close()
 
 
 
-api.add_resource(ExplainService, '/explain')
-
-
-# driver function
 if __name__ == '__main__':
+
     app.run(debug=True)

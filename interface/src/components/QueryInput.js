@@ -9,24 +9,24 @@ const SqlQueryInput = () => {
     setSqlQuery(event.target.value);
   };
 
-
-
+  
   const handleExecuteQuery = async (e) => {
     e.preventDefault();
-    var data={'sql':sqlQuery}
-    console.log( data);
-
     try {
-      const response = await axios.post('http://localhost:5000/explain', data,{
-        headers: {
-          Authorization: `Token `,
-        },
+      const response = await axios.post("http://127.0.0.1:5000/explain", {
+      sql: sqlQuery
       });
-      console.log('POST request response:', response.data);
+      console.log("Response:", response.data);
     } catch (error) {
-      console.error('POST request error:', error);
+      console.error("Error executing SQL query:", error);
+  
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+      }
     }
   };
+
+
   return (
     <div className="mb-3">
       <textarea
@@ -36,7 +36,7 @@ const SqlQueryInput = () => {
         value={sqlQuery}
         onChange={handleQueryChange}
       ></textarea>
-      <button className="btn btn-primary mt-2" onClick={handleExecuteQuery}>
+      <button className="btn btn-info mt-2" onClick={handleExecuteQuery}>
         Execute Query
       </button>
     </div>
