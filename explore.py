@@ -23,42 +23,79 @@ def get(self):
 @app.route('/explain', methods=['POST'])
 @cross_origin(origin='*',headers=['Content-Type','Authorization'])
 def post():
-    request_json = request.get_json()
-    query_sql = request_json.get("sql")
-
-    if query_sql is None:
+    requestJSON = request.get_json()  # status code
+    querySQL = requestJSON.get("sql")
+    if querySQL is None:
         response = jsonify({'message': 'Send SQL in Request !!  '})
         response.status_code = 400
         return response
+    dbHostIP = requestJSON.get("dbHostIP")
+    dbPort = requestJSON.get("dbPort")
+    dbName = requestJSON.get("dbName")
+    dbUser = requestJSON.get("dbUser")
+    dbPassword = requestJSON.get("dbPassword")
 
-    explain_query_sql = "explain (analyze, verbose, BUFFERS, FORMAT json) " + query_sql
+    explainQuerySQL = "explain (analyze, verbose, BUFFERS, FORMAT json) " + querySQL
 
+    # Establish the connection
     try:
         conn = psycopg2.connect(
-            database="postgres", user=USER, password=PASSWORD, host='127.0.0.1', port=PORTNUMBER
+            database=dbName, user=dbUser, password=dbPassword, host=dbHostIP, port=dbPort
         )
-
-        cursor = conn.cursor()
-        cursor.execute("SET search_path TO tpch1g")
-        cursor.execute(explain_query_sql)
-        response_data = cursor.fetchall()[0]
-
-
-        response = jsonify(response_data)
-        response.status_code = 200
-        # response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'POST')
-        return response
-
     except Exception as err:
-        response = jsonify({'message': str(err)})
+        response = jsonify({'DbConnection': 'Failed : ' + str(err)})
         response.status_code = 400
         return response
 
-    finally:
-        conn.close()
+    #
+    cursor = conn.cursor()
+    cursor.execute("SET search_path TO tpch1g")
+    try:
+        cursor.execute(explainQuerySQL)
+    except Exception as err:
 
+        response = jsonify({'message': str(err)})
+        response.status_code = 400
+        return response
+    response = cursor.fetchall()[0]
+    # response.status_code = 200
+    return response
+    #
+    conn.close()
+@app.route('/authenticate', methods=['GET'])
+@cross_origin(origin='*',headers=['Content-Type','Authorization'])
+def getAuth(self):
+    response = jsonify({'message': 'Use Post to send SQL'})
+    response.status_code = 400
+    return response
+    # Corresponds to POST request
+
+@app.route('/authenticate', methods=['POST'])
+@cross_origin(origin='*',headers=['Content-Type','Authorization'])
+def postAuth(self):
+        requestJSON = request.get_json()  # status code
+        dbHostIP =  requestJSON.get("dbHostIP")
+        dbPort = requestJSON.get("dbPort")
+        dbName   = requestJSON.get("dbName")
+        dbUser   = requestJSON.get("dbUser")
+        dbPassword = requestJSON.get("dbPassword")
+
+        # Establish the connection
+        try:
+            conn = psycopg2.connect(
+                database=dbName, user=dbUser, password=dbPassword, host=dbHostIP, port=dbPort
+            )
+        except Exception as err:
+            response = jsonify({'DbConnection': 'Failed : ' + str(err)})
+            response.status_code = 400
+            return response
+
+        #
+        response = jsonify({'DbConnection': 'Successful'})
+        #response.status_code = 200
+        return response
+        #
+        conn.close()
 
 if __name__ == '__main__':
 
