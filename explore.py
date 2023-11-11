@@ -49,7 +49,6 @@ def post():
         # response.headers.add('Access-Control-Allow-Origin', '*')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
         response.headers.add('Access-Control-Allow-Methods', 'POST')
-        print(response_data)
         return response
 
     except Exception as err:
