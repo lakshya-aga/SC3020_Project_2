@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 function Login() {
   const [inputs, setInputs] = useState({ username: '', host: '', password: '', database: '', port: '' });
@@ -15,22 +16,16 @@ function Login() {
     event.preventDefault();
     // TODO: Add backend credentials check and fetch profile info logic here
     try {
-      const response = await fetch('http://127.0.0.1:5000/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          dbUser: inputs.username,
-          dbHostIP: inputs.host,
-          dbPassword: inputs.password,
-          dbName: inputs.database,
-          dbPort: inputs.port,
-        }),
+      const response = await axios.post("http://127.0.0.1:5000/authenticate", {
+        dbUser: inputs.username,
+        dbHostIP: inputs.host,
+        dbPassword: inputs.password,
+        dbName: inputs.database,
+        dbPort: inputs.port
       });
 
       if (response.ok) {
-        // Redirect to the home page after successful login
+        // Redirect to the main page after successful login
         const data = await response.json();
         setToken(data.token);
         sessionStorage.setItem('token', data.token);
