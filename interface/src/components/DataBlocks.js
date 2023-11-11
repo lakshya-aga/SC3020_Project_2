@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const data = {
     20: [1, 2, 3],
@@ -25,12 +25,52 @@ const data = {
 };
 
 
+const DataBlockModal = ({show,onHide,blockId}) => {
+  const modalDisplay = show ? 'block' : 'none';
+
+  return (
+    <div class='modal' style={{display:modalDisplay}}>
+      <div class="modal-dialog modal-dialog-centered">
+        <div class='modal-content'>
+          <div class='modal-header border-0'>
+            <h5 className="modal-title w-100 text-center">Tuples in Block {blockId}</h5>
+          </div>
+          <div class='modal-body'>
+            <h5 class='modal-title'>List of Tuple IDs</h5>
+          </div>
+          <div class='modal-footer border-0'>
+            <button type='button' class='btn btn-outline-info' onClick={onHide}>
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Datablocks = () => {
     const maxColumns = 3; // Maximum number of columns
     const columnWidth = 12 / maxColumns; // Bootstrap column width calculation
+
+    const [showModal,setShowModal] = useState(false);
+    const [selectedBlock,setSelectedBlock] = useState(null);
+
+    const HandleBlockClick = (blockId) => {
+      //set selected block and show modal
+      console.log("Block Clicked:",blockId)
+      setSelectedBlock(blockId);
+      setShowModal(true);
+    }
+
+    const HandleCloseModal = () => {
+      //close the modal and reset select block
+      setShowModal(false);
+      setSelectedBlock(null);
+    }
   
     return (
-      <div className="container mt-4" style={{ width: '40vw',height: '50vh', overflowY: 'auto'}}>
+      <div className="d-flex justify-content-start" style={{ width: '40vw', height: '50vh', overflowY: 'auto' }}>
         <div className={`row row-cols-1 row-cols-md-${maxColumns} g-2`}>
           {Object.keys(data).map((blockId) => {
             const tuples = data[blockId];
@@ -39,7 +79,9 @@ const Datablocks = () => {
               <div className={`col-md-${columnWidth}`} key={blockId}>
                 <div className="card">
                   <div className="card-body">
-                    <h5 className="card-title">Block {blockId}</h5>
+                    <div className="text-center">
+                      <h5 className="card-title">Block {blockId}</h5>
+                    </div>
                     <div className="progress" style={{ height: '20px', marginBottom: '10px' }}>
                       <div
                         className="progress-bar bg-info"
@@ -50,15 +92,24 @@ const Datablocks = () => {
                         aria-valuemax="100"
                       ></div>
                     </div>
-                    <p className="card-text">
-                      {tuples.length} Tuple{tuples.length !== 1 ? 's' : ''}
-                    </p>
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        className="btn btn-outline-info"
+                        onClick={() => HandleBlockClick(blockId)} // Pass the blockId to HandleBlockClick
+                      >
+                        {tuples.length} Tuple{tuples.length !== 1 ? 's' : ''}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             );
           })}
         </div>
+        {selectedBlock && (
+          <DataBlockModal show={showModal} onHide={HandleCloseModal} blockId={selectedBlock} />
+        )}
       </div>
     );
   };

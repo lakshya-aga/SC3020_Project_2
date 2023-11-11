@@ -15,7 +15,7 @@ function Login() {
     event.preventDefault();
     // TODO: Add backend credentials check and fetch profile info logic here
     try {
-      const response = await fetch('', {
+      const response = await fetch('http://127.0.0.1:5000/auth', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

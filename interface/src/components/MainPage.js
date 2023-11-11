@@ -2,6 +2,8 @@ import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import SqlQueryInput from './QueryInput'; // Import the SqlQueryInput component
 import DataBlocks from './DataBlocks';
+import OrgChartTree from '../QepVisualization';
+
 
 function MainPage() {
   return (
