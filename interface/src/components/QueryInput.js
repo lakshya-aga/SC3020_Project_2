@@ -2,12 +2,16 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import OrgChartTree from '../QepVisualization';
 
+
+
+
 const SqlQueryInput = () => {
   const [sqlQuery, setSqlQuery] = useState('');
-
+  
   const handleQueryChange = (event) => {
     setSqlQuery(event.target.value);
   };
+  const [sqlQueryResponse, setSqlQueryResponse] = useState('');
 
   
   const handleExecuteQuery = async (e) => {
@@ -16,7 +20,7 @@ const SqlQueryInput = () => {
       const response = await axios.post("http://127.0.0.1:5000/explain", {
       sql: sqlQuery
       });
-      console.log("Response:", response.data);
+      setSqlQueryResponse(response["data"][0][0]["Plan"])
     } catch (error) {
       console.error("Error executing SQL query:", error);
   
@@ -39,6 +43,11 @@ const SqlQueryInput = () => {
       <button className="btn btn-info mt-2" onClick={handleExecuteQuery}>
         Execute Query
       </button>
+      {sqlQueryResponse && (
+          <OrgChartTree sample={sqlQueryResponse} /> 
+        )}
+
+      
     </div>
   );
 };

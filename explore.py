@@ -20,20 +20,11 @@ def get(self):
     return response
 
 
-<<<<<<< HEAD
-
-# making a class for a particular resource
-# the get, post methods correspond to get and post requests
-# they are automatically mapped by flask_restful.
-# other methods include put, delete, etc.
-class ExplainService(Resource):
-=======
 @app.route('/explain', methods=['POST'])
 @cross_origin(origin='*',headers=['Content-Type','Authorization'])
 def post():
     request_json = request.get_json()
     query_sql = request_json.get("sql")
->>>>>>> Anushree
 
     if query_sql is None:
         response = jsonify({'message': 'Send SQL in Request !!  '})
@@ -52,21 +43,13 @@ def post():
         cursor.execute(explain_query_sql)
         response_data = cursor.fetchall()[0]
 
-<<<<<<< HEAD
-            response = jsonify({'message': str(err)})
-            response.status_code = 400
-            return response
-        response = cursor.fetchall()[0]
-        print(response)
-        #response.status_code = 200
-=======
+
         response = jsonify(response_data)
         response.status_code = 200
         # response.headers.add('Access-Control-Allow-Origin', '*')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
         response.headers.add('Access-Control-Allow-Methods', 'POST')
         print(response_data)
->>>>>>> Anushree
         return response
 
     except Exception as err:
