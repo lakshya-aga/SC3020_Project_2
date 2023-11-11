@@ -21,11 +21,11 @@ function Login() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: inputs.username,
-          host: inputs.host,
-          password: inputs.password,
-          database: inputs.database,
-          port: inputs.port,
+          dbUser: inputs.username,
+          dbHostIP: inputs.host,
+          dbPassword: inputs.password,
+          dbName: inputs.database,
+          dbPort: inputs.port,
         }),
       });
 

@@ -3,6 +3,7 @@ import axios from 'axios';
 
 const SqlQueryInput = () => {
   const [sqlQuery, setSqlQuery] = useState('');
+  const [sqlQueryResponse, setSqlQueryResponse] = useState('');
 
   const handleQueryChange = (event) => {
     setSqlQuery(event.target.value);
