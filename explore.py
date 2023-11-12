@@ -4,12 +4,10 @@ from flask_cors import CORS, cross_origin
 import psycopg2
 import logging
 
-PORTNUMBER = "5430"
-PASSWORD = "banach"
-USER = "postgres"
+
 
 app = Flask(__name__)
-cors = CORS(app, resources={r"/explain": {"origins": "*"}})
+cors = CORS(app, resources={r"/explain": {"origins": "*"}, r"/authenticate": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 @app.route('/explain', methods=['GET'])
@@ -72,13 +70,14 @@ def getAuth(self):
 
 @app.route('/authenticate', methods=['POST'])
 @cross_origin(origin='*',headers=['Content-Type','Authorization'])
-def postAuth(self):
+def postAuth():
         requestJSON = request.get_json()  # status code
         dbHostIP =  requestJSON.get("dbHostIP")
         dbPort = requestJSON.get("dbPort")
         dbName   = requestJSON.get("dbName")
         dbUser   = requestJSON.get("dbUser")
         dbPassword = requestJSON.get("dbPassword")
+        print(dbPassword, dbUser, dbName, dbPort, dbHostIP)
 
         # Establish the connection
         try:

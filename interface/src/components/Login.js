@@ -24,9 +24,9 @@ function Login() {
         dbPort: inputs.port
       });
 
-      if (response.ok) {
+      if (response.statusText == "OK") {
         // Redirect to the main page after successful login
-        const data = await response.json();
+        const data = await response.data;
         setToken(data.token);
         sessionStorage.setItem('token', data.token);
         console.log('Token:', data.token);
