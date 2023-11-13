@@ -24,12 +24,11 @@ const SqlQueryInput = ({ onReceiveJsonData }) => {
 
 
       if (response.statusText == "OK") {
-        // Redirect to the main page after successful login
         const data = await response.data;
-        setToken(data.token);
-        sessionStorage.setItem('token', data.token);
         console.log('Token:', data.token);
-        navigate('/');
+        const jsonData = response.data[0][0].Plan;
+        console.log(jsonData);
+        onReceiveJsonData(jsonData);
       } else {
         // Handle login failure here (display error message, etc.)
         console.error('Failed');
