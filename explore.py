@@ -26,16 +26,9 @@ def get(self):
 cors = CORS(app, resources={r"/explain": {"origins": "*"}, r"/authenticate": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-@app.route('/explain', methods=['GET'])
-@cross_origin(origin='*',headers=['Content-Type','Authorization'])
-def get(self):
-    response = jsonify({'message': 'Use Post to send SQL'})
-    response.status_code = 400
-    return response
-
 
 @app.route('/explain', methods=['POST'])
-@cross_origin(origin='*', headers=['Content-Type', 'Authorization'])
+@cross_origin(origin='*', headers=['Content-Type'])
 def post():
     requestJSON = request.get_json()  # status code
 
@@ -78,9 +71,9 @@ def post():
         response.status_code = 400
         return response
     
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response = cursor.fetchall()[0]
-    # response.status_code = 200
+    response = jsonify({'Plan': cursor.fetchall()[0]})
+    response.status_code = 200
+    response.headers.add("Access-Control-Allow-Origin", "*")
     # conn.close()
     # os.system("rm authDetails.json")
     return response

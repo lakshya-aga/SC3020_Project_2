@@ -3,30 +3,62 @@ import axios from 'axios';
 
 const SqlQueryInput = ({ onReceiveJsonData }) => {
   const [sqlQuery, setSqlQuery] = useState('');
+  const [token, setToken] = useState(null);
 
   const handleQueryChange = (event) => {
     setSqlQuery(event.target.value);
   };
+  
 
-  const handleExecuteQuery = async (e) => {
-    e.preventDefault();
+  //
+  const handleExecuteQuery = async (event) => {
+    event.preventDefault();
+    // TODO: Add backend credentials check and fetch profile info logic here
     try {
       const response = await axios.post("http://127.0.0.1:5000/explain", {
-
         sql: sqlQuery
       });
 
-      const jsonData = response.data[0][0].Plan;
-      onReceiveJsonData(jsonData);
-    } catch (error) {
-      console.error("Error executing SQL query:", error);
 
-      if (error.response) {
-        console.error("Error response:", error.response.data);
+
+
+
+      if (response.statusText == "OK") {
+        // Redirect to the main page after successful login
+        const data = await response.data;
+        setToken(data.token);
+        sessionStorage.setItem('token', data.token);
+        console.log('Token:', data.token);
+        navigate('/');
+      } else {
+        // Handle login failure here (display error message, etc.)
+        console.error('Failed');
       }
+    } catch (error) {
+      // Handle network errors or other exceptions here
+      console.error('Error:', error);
     }
   };
 
+  //
+  // const handleExecuteQuery = async (e) => {
+  //   e.preventDefault();
+  //   try {
+  //     const response = await axios.post("http://127.0.0.1:5000/explain", {
+  //       sql: sqlQuery
+  //     });
+
+  //     const jsonData = response.data[0][0].Plan;
+  //     console.log(jsonData);
+  //     onReceiveJsonData(jsonData);
+  //   } catch (error) {
+  //     console.error("Error executing SQL query:", error);
+
+  //     if (error.response) {
+  //       console.error("Error response:", error.response.data);
+  //     }
+  //   }
+  // };
 
   return (
     <div class="d-flex flex-column" style={{ width: '40vw'}}>
