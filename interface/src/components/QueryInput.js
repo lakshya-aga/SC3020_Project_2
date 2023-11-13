@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const SqlQueryInput = () => {
+const SqlQueryInput = ({ onReceiveJsonData }) => {
   const [sqlQuery, setSqlQuery] = useState('');
-  const [sqlQueryResponse, setSqlQueryResponse] = useState('');
 
   const handleQueryChange = (event) => {
     setSqlQuery(event.target.value);
@@ -13,12 +12,14 @@ const SqlQueryInput = () => {
     e.preventDefault();
     try {
       const response = await axios.post("http://127.0.0.1:5000/explain", {
-      sql: sqlQuery
+        sql: sqlQuery
       });
-      setSqlQueryResponse(response["data"][0][0]["Plan"])
+
+      const jsonData = response.data[0][0].Plan;
+      onReceiveJsonData(jsonData);
     } catch (error) {
       console.error("Error executing SQL query:", error);
-  
+
       if (error.response) {
         console.error("Error response:", error.response.data);
       }
