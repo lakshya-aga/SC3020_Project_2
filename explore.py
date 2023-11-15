@@ -63,6 +63,9 @@ class ValidateDBConnection(Resource):
         # response.status_code = 200
         return response
         #
+def trim(str):
+    str2 = ' '.join(str.split())
+    return str2
 
 
 # making a class for a particular resource
@@ -395,3 +398,4 @@ api.add_resource(ValidateDBConnection, '/authenticate')
 # driver function
 if __name__ == '__main__':
     app.run(debug=True)
+
