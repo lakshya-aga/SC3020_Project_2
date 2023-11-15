@@ -2,129 +2,27 @@ import React, { useEffect } from 'react';
 import * as echarts from 'echarts';
 
 const OrgChart = ({ data }) => {
-  const sampleData = {
-    "Node Type": "Aggregate",
-      
-      "Plans": [
-          {
-              "Node Type": "Gather Merge",
-              "Parent Relationship": "Outer",
-              
-              "Output": [
-                  "l_returnflag",
-                  "l_linestatus",
-                  "(PARTIAL sum(l_quantity))",
-                  "(PARTIAL sum(l_extendedprice))",
-                  "(PARTIAL sum((l_extendedprice * ('1'::numeric - l_discount))))",
-                  "(PARTIAL sum(((l_extendedprice * ('1'::numeric - l_discount)) * ('1'::numeric + l_tax))))",
-                  "(PARTIAL avg(l_quantity))",
-                  "(PARTIAL avg(l_extendedprice))",
-                  "(PARTIAL avg(l_discount))",
-                  "(PARTIAL count(*))"
-              ],
-              
-              "Plans": [
-                  {
-                      "Node Type": "Sort",
-                      "Parent Relationship": "Outer",
-                      
-                      "Output": [
-                          "l_returnflag",
-                          "l_linestatus",
-                          "(PARTIAL sum(l_quantity))",
-                          "(PARTIAL sum(l_extendedprice))",
-                          "(PARTIAL sum((l_extendedprice * ('1'::numeric - l_discount))))",
-                          "(PARTIAL sum(((l_extendedprice * ('1'::numeric - l_discount)) * ('1'::numeric + l_tax))))",
-                          "(PARTIAL avg(l_quantity))",
-                          "(PARTIAL avg(l_extendedprice))",
-                          "(PARTIAL avg(l_discount))",
-                          "(PARTIAL count(*))"
-                      ],
-                      "Sort Key": [
-                          "lineitem.l_returnflag",
-                          "lineitem.l_linestatus"
-                      ],
-                      "Sort Method": "quicksort",
-                      
-                      
-                      "Plans": [
-                          {
-                              "Node Type": "Aggregate",
-                              "Strategy": "Hashed",
-                              
-                              "Output": [
-                                  "l_returnflag",
-                                  "l_linestatus",
-                                  "PARTIAL sum(l_quantity)",
-                                  "PARTIAL sum(l_extendedprice)",
-                                  "PARTIAL sum((l_extendedprice * ('1'::numeric - l_discount)))",
-                                  "PARTIAL sum(((l_extendedprice * ('1'::numeric - l_discount)) * ('1'::numeric + l_tax)))",
-                                  "PARTIAL avg(l_quantity)",
-                                  "PARTIAL avg(l_extendedprice)",
-                                  "PARTIAL avg(l_discount)",
-                                  "PARTIAL count(*)"
-                              ],
-                              "Group Key": [
-                                  "lineitem.l_returnflag",
-                                  "lineitem.l_linestatus"
-                              ],
-                              
-                              "Plans": [
-                                  {
-                                      "Node Type": "Seq Scan",
-                                      "Parent Relationship": "Outer",
-                                      
-                                      "Output": [
-                                          "l_orderkey",
-                                          "l_partkey",
-                                          "l_suppkey",
-                                          "l_linenumber",
-                                          "l_quantity",
-                                          "l_extendedprice",
-                                          "l_discount",
-                                          "l_tax",
-                                          "l_returnflag",
-                                          "l_linestatus",
-                                          "l_shipdate",
-                                          "l_commitdate",
-                                          "l_receiptdate",
-                                          "l_shipinstruct",
-                                          "l_shipmode",
-                                          "l_comment"
-                                      ],
-                                      "Filter": "(lineitem.l_shipdate <= '1997-10-14'::date)"
-                                      
-                                  }
-                              ]
-                          }
-                      ]
-                  }
-              ]
-          }
-      ]
-};
-
-  function renameKeys(json) {
-    if (Array.isArray(json)) {
-      return json.map(item => renameKeys(item));
-    } else if (typeof json === 'object') {
-      const renamedObject = {};
-      for (const key in json) {
-        let newKey = key;
-        if (key === 'Plan' || key === 'Plans') {
-          newKey = 'children';
-        } else if (key === 'Node Type') {
-          newKey = 'name';
-        }
-        renamedObject[newKey] = renameKeys(json[key]);
+  
+function renameKeys(json) {
+  if (Array.isArray(json)) {
+    return json.map(item => renameKeys(item));
+  } else if (typeof json === 'object') {
+    const renamedObject = {};
+    for (const key in json) {
+      if (key === 'Plans') {
+        renamedObject['children'] = renameKeys(json[key]);
+      } else if (key === 'Node Type') {
+        renamedObject['name'] = json[key];
+      } else {
+        renamedObject[key] = renameKeys(json[key]);
       }
-      return renamedObject;
-    } else {
-      return json;
     }
+    return renamedObject;
+  } else {
+    return json;
   }
-
-  const dataChart = renameKeys(sampleData);
+}
+  const dataChart = renameKeys(data);
 
   useEffect(() => {
     const chartDom = document.getElementById('orgChart');
@@ -135,7 +33,17 @@ const OrgChart = ({ data }) => {
         triggerOn: 'mousemove',
         formatter: (params) => {
           const data = params.data;
-          return `Node Type: ${data.name}`;
+          const blockAccessed = data.blocksAccessed && data.blocksAccessed[0] && data.blocksAccessed[0][0];
+
+          if (blockAccessed) {
+            return `Startup Cost: ${data['Startup Cost']} 
+              <br> Total Cost: ${data['Total Cost']} 
+              <br> Table Name: ${blockAccessed.tablename}
+              <br> No. of Tuples: ${blockAccessed.blockaccessed && blockAccessed.blockaccessed[0] ? blockAccessed.blockaccessed[0].tuplecount : 'N/A'}`;
+          } else {
+            return `Startup Cost: ${data['Startup Cost']} 
+              <br> Total Cost: ${data['Total Cost']}`;
+          }
         },
       },
       series: [
@@ -144,15 +52,16 @@ const OrgChart = ({ data }) => {
           id: 0,
           name: 'tree1',
           data: [dataChart],
-          top: '10%',
-          left: '8%',
-          bottom: '22%',
-          right: '20%',
+          top: '5%',
+          left: '2%',
+          bottom: '2%',
+          right: '2%',
           symbol: 'rect',
-          symbolSize: 80,
+          symbolSize: 60,
           orient: 'vertical',
+          zoom: 1,
           edgeShape: 'polyline',
-          edgeForkPosition: '63%',
+          edgeForkPosition: '100%',
           initialTreeDepth: -1,
           itemStyle:{
             color: '#5bc8ec'
@@ -164,8 +73,8 @@ const OrgChart = ({ data }) => {
             position: 'inside',
             verticalAlign: 'middle',
             align: 'center',
-            width: 80,
-            fontSize: 16,
+            width: 60,
+            fontSize: 12,
             overflow:'break'
           },
           leaves: {
@@ -174,7 +83,7 @@ const OrgChart = ({ data }) => {
               verticalAlign: 'middle',
               width: 100,
               align: 'center',
-              fontSize: 16,
+              fontSize: 12,
             },
             itemStyle:{
               color: '#0d566e'

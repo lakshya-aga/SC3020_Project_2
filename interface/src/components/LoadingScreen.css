@@ -1,0 +1,23 @@
+/* SqlQueryInput.css */
+.loading {
+    position: relative;
+  }
+  
+  .loading::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+    z-index: 999; /* Ensure it appears above other content */
+  }
+  
+  .loading textarea,
+  .loading button {
+    filter: blur(5px); /* Blur the text area and button */
+  }
+  
+  /* You can add additional styling for the loading spinner or message here */
+  

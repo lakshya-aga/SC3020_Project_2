@@ -1,68 +1,43 @@
+// SqlQueryInput.js
 import React, { useState } from 'react';
 import axios from 'axios';
+import './LoadingScreen.css'; // Import CSS file for styling
 
 const SqlQueryInput = ({ onReceiveJsonData }) => {
   const [sqlQuery, setSqlQuery] = useState('');
-  const [token, setToken] = useState(null);
+  const [loading, setLoading] = useState(false); // New loading state
 
   const handleQueryChange = (event) => {
     setSqlQuery(event.target.value);
   };
-  
 
-  //
   const handleExecuteQuery = async (event) => {
     event.preventDefault();
-    // TODO: Add backend credentials check and fetch profile info logic here
+    setLoading(true); // Set loading to true when starting the query
+
     try {
       const response = await axios.post("http://127.0.0.1:5000/explain", {
         sql: sqlQuery
       });
 
-
-
-
-
-      if (response.statusText == "OK") {
+      if (response.statusText === "OK") {
         const data = await response.data;
-        console.log('Token:', data.token);
         const jsonData = response.data[0][0].Plan;
-        console.log(jsonData);
         onReceiveJsonData(jsonData);
       } else {
-        // Handle login failure here (display error message, etc.)
         console.error('Failed');
       }
     } catch (error) {
-      // Handle network errors or other exceptions here
       console.error('Error:', error);
+    } finally {
+      setLoading(false); // Set loading to false when the query is complete
     }
   };
 
-  //
-  // const handleExecuteQuery = async (e) => {
-  //   e.preventDefault();
-  //   try {
-  //     const response = await axios.post("http://127.0.0.1:5000/explain", {
-  //       sql: sqlQuery
-  //     });
-
-  //     const jsonData = response.data[0][0].Plan;
-  //     console.log(jsonData);
-  //     onReceiveJsonData(jsonData);
-  //   } catch (error) {
-  //     console.error("Error executing SQL query:", error);
-
-  //     if (error.response) {
-  //       console.error("Error response:", error.response.data);
-  //     }
-  //   }
-  // };
-
   return (
-    <div class="d-flex flex-column" style={{ width: '40vw'}}>
+    <div className={`d-flex flex-column ${loading ? 'loading' : ''}`} style={{ width: '40vw' }}>
       <textarea
-        class="form-control" 
+        className="form-control"
         rows="5"
         placeholder="Enter your SQL query here..."
         value={sqlQuery}
