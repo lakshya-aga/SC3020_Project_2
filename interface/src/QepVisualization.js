@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import * as echarts from 'echarts';
 
-const OrgChart = ({ data }) => {
+const OrgChart = ({ data, onClick }) => {
   
 function renameKeys(json) {
   if (Array.isArray(json)) {
@@ -26,24 +26,45 @@ function renameKeys(json) {
 
   useEffect(() => {
     const chartDom = document.getElementById('orgChart');
+    var blockAccessed;
     const myChart = echarts.init(chartDom);
+
+    //Added onclick event listener
+    myChart.on('click', (params) => {
+      var clickedData = params.data;
+      console.log(params.data);
+      console.log("clicked");
+      onClick(clickedData);
+    }, [data]);
+
     const option = {
       tooltip: {
         trigger: 'item',
         triggerOn: 'mousemove',
         formatter: (params) => {
           const data = params.data;
-          const blockAccessed = data.blocksAccessed && data.blocksAccessed[0] && data.blocksAccessed[0][0];
-
-          if (blockAccessed) {
-            return `Startup Cost: ${data['Startup Cost']} 
-              <br> Total Cost: ${data['Total Cost']} 
-              <br> Table Name: ${blockAccessed.tablename}
-              <br> No. of Tuples: ${blockAccessed.blockaccessed && blockAccessed.blockaccessed[0] ? blockAccessed.blockaccessed[0].tuplecount : 'N/A'}`;
-          } else {
-            return `Startup Cost: ${data['Startup Cost']} 
-              <br> Total Cost: ${data['Total Cost']}`;
+          if(data.blocksAccessed[0] && data.blocksAccessed[0][0])
+          {blockAccessed = data.blocksAccessed ;}
+          // if (blockAccessed) {
+          //   return `Startup Cost: ${data['Startup Cost']} 
+          //     <br> Total Cost: ${data['Total Cost']}
+          //     <br> Table Name: ${blockAccessed[0][0].tablename}
+          //     <br> No. of Blocks: ${(blockAccessed[0][0].blockaccessed.length)}`;
+          // } else {
+          //   return `Startup Cost: ${data['Startup Cost']} 
+          //     <br> Total Cost: ${data['Total Cost']}`;
+          // }
+          var str = ""
+          //Can Add a manual list of things to skip
+          //notToInclude = ["Thing1", "Thing2"];
+          for (var key in data)
+          {
+            var value = data[key];
+            if(value.length>15 || (typeof value)==="object" /** || (notToInclude.includes(key)) */)
+            continue;
+            str = str + key + ": " + value + "<br>";
           }
+          return str;
         },
       },
       series: [

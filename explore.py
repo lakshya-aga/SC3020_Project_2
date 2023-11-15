@@ -63,7 +63,6 @@ class ValidateDBConnection(Resource):
         # response.status_code = 200
         return response
         #
-        conn.close()
 
 
 # making a class for a particular resource
@@ -228,6 +227,7 @@ class ExplainService(Resource):
                 node["blocksSQL"] = blocksSQL
                 node["tupleSQL"] = tupleSQL
                 try:
+                    print(blocksSQL)
                     cursor.execute(blocksSQL)
                 except Exception as err:
                     response = jsonify({'message': str(err)})
@@ -381,7 +381,7 @@ class getBlockTuples(Resource):
         except Exception as err:
 
             response = jsonify({'message': str(err)})
-            response.status_code = 400
+            response.status_code = 410
             return response
         response = cursor.fetchall()[0]
 
