@@ -23,6 +23,7 @@ const SqlQueryInput = ({ onReceiveJsonData }) => {
       if (response.statusText === "OK") {
         const data = await response.data;
         const jsonData = response.data[0][0].Plan;
+        console.log(jsonData)
         onReceiveJsonData(jsonData);
       } else {
         console.error('Failed');

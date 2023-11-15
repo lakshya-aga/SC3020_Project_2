@@ -18,11 +18,13 @@ function MainPage() {
           <h4 className="mb-2">SQL Query Input</h4>
           <SqlQueryInput onReceiveJsonData={handleReceiveJsonData} />
           <h4 className="mb-2 mt-4">Blocks Accessed</h4>
-          <DataBlocks />
+          {jsonData && <DataBlocks data={jsonData} />}
         </div>
-        <div className="col-7 mt-4 text-center" style={{ width: '50%' }}>
-          <h4 className="mb-2">QEP Tree</h4>
-          {jsonData && <OrgChartTree data={jsonData} />}
+        <div className="col-md-7">
+          <h4 className="mb-2 text-center">QEP Tree</h4>
+          <div style={{ height: '500px', overflowY: 'auto' }}>
+            {jsonData && <OrgChartTree data={jsonData} />}
+          </div>
         </div>
       </div>
     </div>
