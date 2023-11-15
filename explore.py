@@ -131,22 +131,22 @@ class ExplainService(Resource):
         for node in nodes:
             mainPlanProcessing = False;
             if ("Subplan Name" in node):
-                tableList = ();
-                predicateList = ();
-                orderByList = ();
-                groupByList = ();
-                analyze_node(node);
+                tableList = ()
+                predicateList = ()
+                orderByList = ()
+                groupByList = ()
+                analyze_node(node)
         for node in nodes:
-            tableList = ();
-            predicateList = ();
-            orderByList = ();
-            groupByList = ();
-            mainPlanProcessing = True;
-            limitCount = 0;
-            analyze_node(node);
-            blocksAccessedJson = "";
-            tableNames = ();
-            tableAliases = ();
+            tableList = ()
+            predicateList = ()
+            orderByList = ()
+            groupByList = ()
+            mainPlanProcessing = True
+            limitCount = 0
+            analyze_node(node)
+            blocksAccessedJson = ""
+            tableNames = ()
+            tableAliases = ()
             for tabix, table in enumerate(tableList):
                 tablesplit = table.split(" ")
                 tableName = tablesplit[0].split(".")[1]
@@ -388,9 +388,86 @@ class getBlockTuples(Resource):
         return response
 
 
+class getMaxTuplesPerBlock(Resource):
+
+    # corresponds to the GET request.
+    # this function is called whenever there
+    # is a GET request for this resource
+    def get(self):
+        response = jsonify({'message': 'Use Post to send SQL'})
+        response.status_code = 400
+        return response
+
+    # Corresponds to POST request
+    def post(self):
+        requestJSON = request.get_json()  # status code
+        tableSchema = requestJSON.get("tableSchema")
+        if tableSchema is None:
+            response = jsonify({'message': 'Send tableSchema in Request !!  '})
+            response.status_code = 400
+            return response
+        f = open('authDetails.json')
+        data = json.load(f)
+        dbHostIP = data["dbHostIP"]
+        dbPort = data["dbPort"]
+        dbName = data["dbName"]
+        dbUser = data["dbUser"]
+        dbPassword = data["dbPassword"]
+        if dbHostIP is None or dbPort is None or dbName is None or dbUser is None or dbPassword is None:
+            response = jsonify({'message': 'Send dbHostIP, dbPort, dbName, dbUser, dbPassword !!  '})
+            response.status_code = 400
+            return response
+
+        # Establish the connection
+        try:
+            conn = psycopg2.connect(
+                database=dbName, user=dbUser, password=dbPassword, host=dbHostIP, port=dbPort
+            )
+        except Exception as err:
+            response = jsonify({'DbConnection': 'Failed : ' + str(err)})
+            response.status_code = 400
+            return response
+
+        #
+        cursor = conn.cursor()
+        # create a temp table and select pg_relation_size and that should give the block size info
+        blockSizeSQL = "CREATE TEMP TABLE tempBlkSize AS SELECT 1 AS id;SELECT pg_relation_size('pg_temp.tempBlkSize');"
+        try:
+            cursor.execute(blockSizeSQL)
+        except Exception as err:
+
+            response = jsonify({'message': str(err)})
+            response.status_code = 400
+            return response
+        blockSize = str(cursor.fetchall()[0][0])
+
+        GetAllTablesSQL = "SELECT table_name FROM information_schema.tables  WHERE table_schema = '" + tableSchema + "'"
+        try:
+            cursor.execute(GetAllTablesSQL)
+        except Exception as err:
+
+            response = jsonify({'message': str(err)})
+            response.status_code = 400
+            return response
+        tableList = cursor.fetchall()
+
+        maxTuplesPerBlockSQL = "select json_agg(row_to_json(blocktuple)) from 	("
+        for tabix, table in enumerate(tableList):
+            maxTuplesPerBlockSQL += "select '" + table[
+                0] + "' as tableName ," + blockSize + " * count(*) / sum(pg_column_size(t)) as maxTuples from " + tableSchema + "." + \
+                                    table[0] + " t"
+            if tabix < len(tableList) - 1:
+                maxTuplesPerBlockSQL += " union "
+        maxTuplesPerBlockSQL += ")  blocktuple"
+        cursor.execute(maxTuplesPerBlockSQL)
+        response = cursor.fetchall()[0]
+        return response
+
+
 api.add_resource(ExplainService, '/explain')
 api.add_resource(getBlockTuples, '/getBlockTuples')
 api.add_resource(ValidateDBConnection, '/authenticate')
+api.add_resource(getMaxTuplesPerBlock, '/getMaxTuples')
 
 # driver function
 if __name__ == '__main__':
