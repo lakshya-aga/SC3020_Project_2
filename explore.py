@@ -71,7 +71,6 @@ class ValidateDBConnection(Resource):
 # they are automatically mapped by flask_restful.
 # other methods include put, delete, etc.
 class ExplainService(Resource):
-
     # corresponds to the GET request.
     # this function is called whenever there
     # is a GET request for this resource
@@ -80,15 +79,6 @@ class ExplainService(Resource):
         response = jsonify({'message': 'Use Post to send SQL'})
         response.status_code = 400
         return response
-    # f = open('authDetails.json')
-    # data = json.load(f)
-    # dbHostIP = data["dbHostIP"]
-    # dbPort = data["dbPort"]
-    # dbName = data["dbName"]
-    # dbUser = data["dbUser"]
-    # dbPassword = data["dbPassword"]
-
-
 
     # Corresponds to POST request
     def post(self):
@@ -98,6 +88,7 @@ class ExplainService(Resource):
             response = jsonify({'message': 'Send SQL in Request !!  '})
             response.status_code = 400
             return response
+
         f = open('authDetails.json')
         data = json.load(f)
         dbHostIP = data["dbHostIP"]
@@ -105,12 +96,12 @@ class ExplainService(Resource):
         dbName = data["dbName"]
         dbUser = data["dbUser"]
         dbPassword = data["dbPassword"]
+
         # dbHostIP = requestJSON.get("dbHostIP")
         # dbPort = requestJSON.get("dbPort")
         # dbName = requestJSON.get("dbName")
         # dbUser = requestJSON.get("dbUser")
         # dbPassword = requestJSON.get("dbPassword")
-
 
         explainQuerySQL = "explain (analyze, verbose, BUFFERS, FORMAT json) " + querySQL
 
@@ -119,7 +110,6 @@ class ExplainService(Resource):
             conn = psycopg2.connect(
                 database=dbName, user=dbUser, password=dbPassword, host=dbHostIP, port=dbPort
             )
-
         except Exception as err:
             response = jsonify({'DbConnection': 'Failed : ' + str(err)})
             response.status_code = 400
@@ -136,39 +126,55 @@ class ExplainService(Resource):
             response.status_code = 400
             return response
         response = cursor.fetchall()[0]
+
+        # Reset search_path to public
         cursor.execute("SET search_path TO public")
-        global nodes, tableList, predicateList, orderByList, groupByList, subplans, ignoreNodes, ignoreNodesFull, mainPlanProcessing, limitCount
+
+        global nodes, tableList, predicateList, orderByList, groupByList, subplans, ignoreNodes, mainPlanProcessing, limitCount
+        # response.status_code = 200
         analyze(response)
+
+        # iterate through nodes tuple for MainPlanProcessing
         ignoreNodes = ["Gather Merge", "Gather", "Hash", "Memoize"]
-        ignoreNodesFull = ["Gather Merge", "Gather", "Hash", "Memoize", "Sort", "Aggregate"]
-        subplans = ()
-        limitCount = 0
+        subplans = ();
+        limitCount = 0;
+        # iterate through nodes tuple for SubPlan Processing
         for node in nodes:
+            # print("Processing ", node["nodeId"])
             mainPlanProcessing = False;
             if ("Subplan Name" in node):
-                tableList = ()
-                predicateList = ()
-                orderByList = ()
-                groupByList = ()
-                analyze_node(node)
+                # print("Processing ", node["nodeId"])
+                tableList = ();
+                predicateList = ();
+                orderByList = ();
+                groupByList = ();
+                analyze_node(node);
+
+        # iterate through nodes tuple for MainPlanProcessing
         for node in nodes:
-            tableList = ()
-            predicateList = ()
-            orderByList = ()
-            groupByList = ()
-            mainPlanProcessing = True
-            limitCount = 0
-            analyze_node(node)
-            blocksAccessedJson = ""
-            tableNames = ()
-            tableAliases = ()
+            # print("Processing ", node["nodeId"])
+            tableList = ();
+            predicateList = ();
+            orderByList = ();
+            groupByList = ();
+            mainPlanProcessing = True;
+            limitCount = 0;
+            analyze_node(node);
+
+            # Build ctid sql for nodes that are not be ignored
+            blocksAccessedJson = "";
+
+            # populated tbale name and alias tuples
+            tableNames = ();
+            tableAliases = ();
             for tabix, table in enumerate(tableList):
                 tablesplit = table.split(" ")
                 tableName = tablesplit[0].split(".")[1]
                 tableAlias = tablesplit[1]
                 tableNames += (tableName,)
                 tableAliases += (tableAlias,)
-            if node["Node Type"] not in ignoreNodesFull:
+
+            if node["Node Type"] not in ignoreNodes and not "Subplan Name" in node:
                 blocksSQL = " Select json_agg(row_to_json(blocktuple)) from ( "
                 tupleSQL = " Select json_agg(row_to_json(blocktuple)) from ( "
                 for tabix, table in enumerate(tableList):
@@ -177,6 +183,7 @@ class ExplainService(Resource):
                     blocksSQL += "select  tableName, aliasName, array_agg((blockid,tupleids)::TableBlockTuple) as blockaccessed from  ( "
                     blocksSQL += " select '" + tableName + "' as tableName, '" + tableAlias + "' as aliasName , ( (" + tableAlias + ".ctid::text::point)[0]::int ) as blockid, count(distinct ((" + tableAlias + ".ctid::text::point)[1]::int )) as tupleids"
                     blocksSQL += " from "
+
                     if tabix == 0:
                         tupleSQL += " select   distinct (( ?" + ".ctid::text::point)[1]::int ) as tupleid, " + "?.*"
                         tupleSQL += " from "
@@ -188,8 +195,11 @@ class ExplainService(Resource):
                             blocksSQL += ', '
                             if tabix == 0:
                                 tupleSQL += ', '
+                    # Add Predicates
                     addWhereClause = True
                     for predicateix, predicateVar in enumerate(predicateList):
+
+                        # look if predicate tablealias is in our table list.. if not don't include the predicate
                         includePredicate = True
                         pOffset = 0
                         if predicateVar.find("#SUBPLAN#") < 0:  # Don't validate predicate with #SUBPLAN# marker
@@ -205,6 +215,7 @@ class ExplainService(Resource):
                                     includePredicate = False
                                     break
                                 pOffset = dotPos + 1
+
                         if includePredicate:
                             if addWhereClause:
                                 addWhereClause = False
@@ -215,7 +226,9 @@ class ExplainService(Resource):
                                 blocksSQL += " and "
                                 if tabix == 0:
                                     tupleSQL += " and "
+
                             if predicateVar.find("#SUBPLAN#") >= 0:  # Remove SUBPLAN Marker before adding SQL
+                                # remove #SUBPLAN# marker and no need to validate predicate
                                 blocksSQL += predicateVar[9:]
                                 if tabix == 0:
                                     tupleSQL += predicateVar[9:]
@@ -228,29 +241,36 @@ class ExplainService(Resource):
                             addWhereClause = False
                             tupleSQL += ' where '
                         else:
+
                             tupleSQL += " and "
                         tupleSQL += " ( (" + "?" + ".ctid::text::point)[0]::int )  = ?"  # Placeholder for extracting with block#
                         tupleSQL += ' order by 2 asc ) blocktuple'
+
                     blocksSQL += ' group by 3   order by 3, 4 asc '
                     if limitCount > 0:
                         blocksSQL += ' limit ' + str(limitCount)
                         if tabix == 0:
                             tupleSQL += ' limit ' + str(limitCount)
+
                     blocksSQL += ') group by tableName, aliasName'
                     if tabix != len(tableList) - 1:
                         blocksSQL += ' union '
+
                 blocksSQL += ' ) blocktuple'
                 node["blocksSQL"] = blocksSQL
                 node["tupleSQL"] = tupleSQL
+
                 try:
                     cursor.execute(blocksSQL)
                 except Exception as err:
+
                     response = jsonify({'message': str(err)})
                     response.status_code = 400
                     return response
                 blocksSQLResponse = cursor.fetchall()[0]
                 node["blocksAccessed"] = blocksSQLResponse
                 print(node["nodeId"], " ", node["Node Type"], " *Count*  ", blocksSQL)
+                # print(node["nodeId"], " ", node["Node Type"], " *Tuple*  ", tupleSQL)
             else:
                 node["blocksSQL"] = ""
                 node["blocksAccessed"] = ""
@@ -280,72 +300,87 @@ def analyze_plan(plan):
 
 
 def analyze_node(node):
-    global tableList, predicateList, orderByList, groupByList, subplans, ignoreNodes, ignoreNodesFull, mainPlanProcessing, limitCount
+    global tableList, predicateList, orderByList, groupByList, subplans, ignoreNodes,  mainPlanProcessing, limitCount
+
     if 'Plans' in node.keys():
         for childnode in node['Plans']:
-            if (
-                    "Subplan Name" in node and mainPlanProcessing):  # Subplan query is already built.. so no need to traverse subplan tree
+            #print("Drilling to ", childnode["nodeId"])
+            if ("Subplan Name"  in node and mainPlanProcessing):        # Subplan query is already built.. so no need to traverse subplan tree
                 break
             else:
                 analyze_node(childnode)
-    if node["Node Type"] in ignoreNodes:
+
+    if node["Node Type"]  in ignoreNodes:
         return
+
     if ("Relation Name" in node):
-        table = node["Schema"] + "." + node["Relation Name"] + " " + node["Alias"]
+        table = node["Schema"]+"."+node["Relation Name"]+ " " + node["Alias"]
         if table not in tableList:
             tableList += (table,);
+
     if ("Index Cond" in node):
         predicateVar = node["Index Cond"]
         if predicateVar not in predicateList:
             predicateList += (predicateVar,);
+
     if ("Filter" in node):
         predicateVar = node["Filter"]
         if predicateVar not in predicateList:
             predicateList += (predicateVar,);
+
     if ("Hash Cond" in node):
         predicateVar = node["Hash Cond"]
         if predicateVar not in predicateList:
             predicateList += (predicateVar,);
+
     if ("Merge Cond" in node):
         predicateVar = node["Merge Cond"]
         if predicateVar not in predicateList:
             predicateList += (predicateVar,);
+
     if ("Sort Key" in node):
         for sortKey in node["Sort Key"]:
             if sortKey not in orderByList:
                 orderByList += (sortKey,);
+
     if ("Join Filter" in node):
         predicateVar = node["Join Filter"]
         subplanPos = predicateVar.find("SubPlan ")
-        if subplanPos >= 0:
-            subplanNum = int(predicateVar[subplanPos + 8: subplanPos + 9])
-            predicateVar = '#SUBPLAN#' + predicateVar[0: subplanPos] + subplans[subplanNum - 1] + predicateVar[
-                                                                                                  subplanPos + 9:]
+        if subplanPos >= 0 :
+            #subplanName = predicateVar[subplanPos: subplanPos + 10]
+            subplanNum  = int(predicateVar[subplanPos + 8: subplanPos + 9])
+            predicateVar = '#SUBPLAN#' + predicateVar[0: subplanPos ] + subplans[subplanNum-1] + predicateVar[subplanPos + 9: ]
             predicateList += (predicateVar,);
-    if ("Subplan Name" in node and not mainPlanProcessing):
+
+    if ("Subplan Name" in node and not mainPlanProcessing) :
         subplanName = node["Subplan Name"]
-        subplanNum = int(subplanName[8:])
-        subplanQuery = "SELECT " + node["Output"][0] + " FROM "
-        for tableix, table in enumerate(tableList):
+        subplanNum  = int(subplanName[8:])
+        subplanQuery = "SELECT " +  node["Output"][0] + " FROM "
+        for tableix,  table in enumerate(tableList) :
             subplanQuery += table
-            if tableix != len(tableList) - 1:
+            if tableix != len(tableList) -1:
                 subplanQuery += ', '
-        if len(predicateList) >= 0:
+        if len(predicateList) >= 0 :
             subplanQuery += " WHERE "
-            for whereClauseIx, whereClauseVar in enumerate(predicateList):
+            for  whereClauseIx, whereClauseVar  in enumerate(predicateList) :
                 subplanQuery += whereClauseVar
                 if whereClauseIx != len(predicateList) - 1:
                     subplanQuery = subplanQuery + " and "
-        if len(subplans) == 0 or subplanNum > len(subplans):
+
+        if len(subplans) == 0 or subplanNum >len(subplans):
             subplans += (subplanQuery,)
         else:
             subplanslist = list(subplans)
             subplanslist[subplanNum - 1] = subplanQuery
             subplans = tuple(subplanslist)
+
     if (node["Node Type"] == "Limit"):
         limitCount = node["Actual Rows"]
-    if node["Node Type"] in ignoreNodesFull:
-        return
+
+    # # Aggregate node block access is already handled in child node.  Aggregation will need to access all block to aggregate
+    # # Similarly Sort would have its child node demonstrate accessed block and no additional blocks are accessed. so no need to show  blocks accessed
+    # if node["Node Type"] in ignoreNodesFull:
+    #     return
 
 
 class getBlockTuples(Resource):
