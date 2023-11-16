@@ -1,17 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-const DataBlockModal = ({ show, onHide, blockId }) => {
+const DataBlockModal = ({ show, onHide, blockInfo, tuplesql }) => {
+  const { tablename, aliasname, blockNum } = blockInfo;
+  const [tupleData, setTupleData] = useState([]);
+  const [loading, setLoading] = useState(true); // New loading state
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Make the API call to fetch tuple information
+        const response = await axios.post('http://127.0.0.1:5000/getBlockTuples', {
+          tableName: tablename,
+          aliasName: aliasname,
+          blockNum: blockNum,
+          sql: tuplesql,
+        });
+
+        if (response.statusText === 'OK') {
+          // Assuming the tuple data is in response.data
+          setTupleData(response.data);
+          console.log(response.data)
+        } else {
+          console.error('Failed to fetch tuple data');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }finally {
+        // Stop loading, whether the request was successful or not
+        setLoading(false);
+      }
+    };
+
+    // Call the fetchData function when the component mounts
+    fetchData();
+  }, [tablename, aliasname, blockNum, tuplesql]); 
   const modalDisplay = show ? 'block' : 'none';
-
+  
   return (
     <div className="modal" style={{ display: modalDisplay }}>
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header border-0">
-            <h5 className="modal-title w-100 text-center">Tuples in Block {blockId}</h5>
+            <h5 className="modal-title w-100 text-center">Tuples in {aliasname}.{tablename}: Block {blockNum}</h5>
           </div>
           <div className="modal-body">
-            <h5 className="modal-title">List of Tuple IDs</h5>
+          {loading ? (
+              <p>Loading...</p>
+            ) : (
+            <>
+            <h5 className="modal-title text-center">List of Tuples</h5>
+            <ul>
+            {tupleData.flatMap((tupleArray) => (
+                // Access the primary key at index 0
+                tupleArray.map((tuple) => (
+                  <li key={tuple.tupleid} className="list-group-item">
+                  {Object.keys(tuple)[1]} : {tuple[Object.keys(tuple)[1]]} 
+                  </li>
+                ))
+              ))}
+            </ul>
+            </>
+          )}
           </div>
           <div className="modal-footer border-0">
             <button type="button" className="btn btn-outline-info" onClick={onHide}>
@@ -28,17 +78,22 @@ const Datablocks = ({ data }) => {
   // Set up state hooks outside any condition or loop
   const [showModal, setShowModal] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState(null);
+  const [displayedBlocks, setDisplayedBlocks] = useState({
+    start: 0,
+    end: 100, // Initially display the first 100 blocks
+  });
+
+  const tupleSQL = data.tupleSQL;
 
   const blocksAccessed = data.blocksAccessed[0];
-  console.log(blocksAccessed)
 
   const maxColumns = 3; // Maximum number of columns
-  const columnWidth = 18 / maxColumns; // Bootstrap column width calculation
+  const columnWidth = 12 / maxColumns; // Bootstrap column width calculation
 
-  const handleBlockClick = (blockId) => {
+  const handleBlockClick = (tablename, aliasname, blockNum) => {
     // Set selected block and show modal
-    console.log('Block Clicked:', blockId);
-    setSelectedBlock(blockId);
+    console.log('Block Clicked:', tablename, aliasname, blockNum);
+    setSelectedBlock({ tablename, aliasname, blockNum });
     setShowModal(true);
   };
 
@@ -48,17 +103,38 @@ const Datablocks = ({ data }) => {
     setSelectedBlock(null);
   };
 
+  const maxBlocksToRender = 100; // Maximum number of blocks to render
+
+  const handleLoadMore = () => {
+    setDisplayedBlocks((prev) => ({
+      start: prev.start + maxBlocksToRender,
+      end: prev.end + maxBlocksToRender,
+    }));
+  };
+
+  const handleLoadPrevious = () => {
+    setDisplayedBlocks((prev) => ({
+      start: Math.max(0, prev.start - maxBlocksToRender),
+      end: Math.max(maxBlocksToRender, prev.end - maxBlocksToRender),
+    }));
+  };
+
+  const handleJumpToStart = () => {
+    setDisplayedBlocks({
+      start: 0,
+      end: maxBlocksToRender,
+    });
+  };
+
   return (
+    <div className={'container mt-4'}>
     <div className="d-flex justify-content-start" style={{ width: '40vw', height: '50vh', overflowY: 'auto' }}>
       <div className={`row row-cols-1 row-cols-md-${maxColumns} g-2`}>
         {blocksAccessed.map((tableBlock, index) => {
-          const { tablename, blockaccessed } = tableBlock;
-          console.log(blockaccessed)
-          return blockaccessed.map((blockInfo) => {
+          const { tablename, blockaccessed,aliasname } = tableBlock;
+          return blockaccessed.slice(displayedBlocks.start, displayedBlocks.end).map((blockInfo) => {
             const { blocks, tuples } = blockInfo;
-            console.log(blocks)
-            console.log(tuples)
-            const fillPercentage = (tuples/ 50) * 100; // Calculate fill percentage
+            const fillPercentage = (tuples/ 100) * 100; // Calculate fill percentage
             return (
               <div className={`col-md-${columnWidth}`} key={`${tablename}-${blocks}`}>
                 <div className="card">
@@ -78,10 +154,10 @@ const Datablocks = ({ data }) => {
                       ></div>
                     </div>
                     <div className="text-center">
-                      <button
-                        type="button"
-                        className="btn btn-outline-info"
-                        onClick={() => handleBlockClick(blocks)}
+                    <button
+                      type="button"
+                      className="btn btn-outline-info"
+                      onClick={() => handleBlockClick(tablename, aliasname, blocks)}
                       >
                         {tuples} Tuple{tuples !== '1' ? 's' : ''}
                       </button>
@@ -93,7 +169,33 @@ const Datablocks = ({ data }) => {
           });
         })}
       </div>
-      {selectedBlock && <DataBlockModal show={showModal} onHide={handleCloseModal} blockId={selectedBlock} />}
+      </div>
+      <div className="text-center mt-3">
+      <button
+          type="button"
+          className="btn btn-info mx-2"
+          onClick={handleJumpToStart}
+          disabled={displayedBlocks.start === 0}
+        >
+          Jump to Start
+        </button>
+        <button
+          type="button"
+          className="btn btn-info mx-2"
+          onClick={handleLoadPrevious}
+          disabled={displayedBlocks.start === 0}
+        >
+          Load Previous
+        </button>
+        <button
+          type="button"
+          className="btn btn-info mx-2"
+          onClick={handleLoadMore}
+        >
+          Load More
+        </button>
+      </div>
+      {selectedBlock && (<DataBlockModal show={showModal} onHide={handleCloseModal} blockInfo={selectedBlock} tuplesql={tupleSQL}/>)}
     </div>
   );
 };

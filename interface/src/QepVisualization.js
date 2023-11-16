@@ -107,7 +107,7 @@ function renameKeys(json) {
     };
   }, [dataChart]);
 
-  return <div id="orgChart" style={{ width: '100%', height: '100vh'}} />;
+  return <div id="orgChart" style={{ width: '100%', height: '200vh'}} />;
 };
 
 export default OrgChart;
