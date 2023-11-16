@@ -51,6 +51,8 @@ class ValidateDBConnection(Resource):
             conn = psycopg2.connect(
                 database=dbName, user=dbUser, password=dbPassword, host=dbHostIP, port=dbPort
             )
+            with open("authDetails.json", "w") as outfile:
+                json.dump(requestJSON, outfile)
         except Exception as err:
             response = jsonify({'DbConnection': 'Failed : ' + str(err)})
             response.status_code = 400
