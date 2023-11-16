@@ -34,12 +34,11 @@ function renameKeys(json) {
         formatter: (params) => {
           const data = params.data;
           const blockAccessed = data.blocksAccessed && data.blocksAccessed[0] && data.blocksAccessed[0][0];
-
           if (blockAccessed) {
             return `Startup Cost: ${data['Startup Cost']} 
               <br> Total Cost: ${data['Total Cost']} 
               <br> Table Name: ${blockAccessed.tablename}
-              <br> No. of Tuples: ${blockAccessed.blockaccessed && blockAccessed.blockaccessed[0] ? blockAccessed.blockaccessed[0].tuplecount : 'N/A'}`;
+              <br> No. of Blocks: ${blockAccessed.blockaccessed.length}`;
           } else {
             return `Startup Cost: ${data['Startup Cost']} 
               <br> Total Cost: ${data['Total Cost']}`;

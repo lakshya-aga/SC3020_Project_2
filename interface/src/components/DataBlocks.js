@@ -104,7 +104,7 @@ const Datablocks = ({ data }) => {
   };
 
   const maxBlocksToRender = 100; // Maximum number of blocks to render
-
+  
   const handleLoadMore = () => {
     setDisplayedBlocks((prev) => ({
       start: prev.start + maxBlocksToRender,
@@ -125,7 +125,9 @@ const Datablocks = ({ data }) => {
       end: maxBlocksToRender,
     });
   };
-
+  
+  var maxTuples = JSON.parse(sessionStorage.getItem('maxTuples'));
+  
   return (
     <div className={'container mt-4'}>
     <div className="d-flex justify-content-start" style={{ width: '40vw', height: '50vh', overflowY: 'auto' }}>
@@ -134,7 +136,9 @@ const Datablocks = ({ data }) => {
           const { tablename, blockaccessed,aliasname } = tableBlock;
           return blockaccessed.slice(displayedBlocks.start, displayedBlocks.end).map((blockInfo) => {
             const { blocks, tuples } = blockInfo;
-            const fillPercentage = (tuples/ 100) * 100; // Calculate fill percentage
+            
+
+            const fillPercentage = (tuples/ maxTuples[tablename]) * 100; // Calculate fill percentage
             return (
               <div className={`col-md-${columnWidth}`} key={`${tablename}-${blocks}`}>
                 <div className="card">
