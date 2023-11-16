@@ -3,8 +3,10 @@ import * as echarts from 'echarts';
 import Modal from 'react-modal';
 
 const OrgChart = ({ data }) => {
-  const [modalContent, setModalContent] = useState(null);
+  const [generalContent, setGeneralContent] = useState(null);
+  const [intermediateContent, setIntermediateContent] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
   
   function renameKeys(json) {
     if (Array.isArray(json)) {
@@ -110,26 +112,22 @@ const OrgChart = ({ data }) => {
       const data = params.data;
       const blockAccessed = data.blocksAccessed && data.blocksAccessed[0] && data.blocksAccessed[0][0];
 
-      let content;
-      if (blockAccessed) {
-        content = (
-          <div>
-            <p>Startup Cost: {data['Startup Cost']}</p>
-            <p>Total Cost: {data['Total Cost']}</p>
-            <p>Table Name: {blockAccessed.tablename}</p>
-            <p>No. of Tuples: {blockAccessed.blockaccessed && blockAccessed.blockaccessed[0] ? blockAccessed.blockaccessed[0].tuplecount : 'N/A'}</p>
-          </div>
-        );
-      } else {
-        content = (
-          <div>
-            <p>Startup Cost: {data['Startup Cost']}</p>
-            <p>Total Cost: {data['Total Cost']}</p>
-          </div>
-        );
-      }
+      const generalContent = (
+        <div>
+          <p>Startup Cost: {data['Startup Cost']}</p>
+          <p>Total Cost: {data['Total Cost']}</p>
+        </div>
+      );
 
-      setModalContent(content);
+      const intermediateContent = (
+        <div>
+          <p>Table Name: {blockAccessed.tablename}</p>
+          <p>No. of Tuples: {blockAccessed.blockaccessed && blockAccessed.blockaccessed[0] ? blockAccessed.blockaccessed[0].tuplecount : 'N/A'}</p>
+        </div>
+      );
+
+      setGeneralContent(generalContent);
+      setIntermediateContent(intermediateContent);
       setShowModal(true);
     });
 
@@ -137,7 +135,7 @@ const OrgChart = ({ data }) => {
     return () => {
       myChart.dispose();
     };
-  }, [dataChart]);
+  }, [dataChart, activeTab]);
 
   const closeModal = () => {
     setShowModal(false);
@@ -146,10 +144,53 @@ const OrgChart = ({ data }) => {
   return (
     <div>
       <div id="orgChart" style={{ width: '100%', height: '200vh' }} />
-      <Modal isOpen={showModal} onRequestClose={closeModal} contentLabel="Node Information">
+      <Modal
+        isOpen={showModal}
+        onRequestClose={closeModal}
+        contentLabel="Node Information"
+        style={{
+          content: {
+            width: '50%', // Adjust the width as needed
+            height: '50%', // Adjust the height as needed
+            margin: 'auto', // Center the modal horizontally
+          },
+          overlay: {
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', // Adjust the overlay background color and transparency
+          },
+        }}
+      >
         <div>
-          <button onClick={closeModal}>Close Modal</button>
-          {modalContent}
+          <ul className="nav nav-tabs">
+            <li className="nav-item">
+              <a
+                className={`nav-link ${activeTab === 'general' ? 'active' : ''}`}
+                onClick={() => setActiveTab('general')}
+                role="button"
+              >
+                General Statistics
+              </a>
+            </li>
+            <li className="nav-item">
+              <a
+                className={`nav-link ${activeTab === 'intermediate' ? 'active' : ''}`}
+                onClick={() => setActiveTab('intermediate')}
+                role="button"
+              >
+                Intermediate Results
+              </a>
+            </li>
+          </ul>
+          <div className="tab-content mt-2">
+            <div className={`tab-pane ${activeTab === 'general' ? 'active' : ''}`}>
+              {generalContent}
+            </div>
+            <div className={`tab-pane ${activeTab === 'intermediate' ? 'active' : ''}`}>
+              {intermediateContent}
+            </div>
+          </div>
+          <button type="button" className="btn btn-info mx-2" onClick={closeModal}>
+            Close Modal
+          </button>
         </div>
       </Modal>
     </div>
