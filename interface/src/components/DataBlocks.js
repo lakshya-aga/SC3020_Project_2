@@ -37,10 +37,12 @@ const DataBlockModal = ({show,onHide,blockId}) => {
 const Datablocks = (passedData) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState(null);  
+  const [sliceStart, setSliceStart] = useState(0);  
+  const [sliceEnd, setSliceEnd] = useState(100);  
   try{
     var data = passedData.passedData.blocksAccessed[0][0].blockaccessed;
-    var sliceStart=0;
-    var sliceEnd=100;
+    // var sliceStart=0;
+    // var sliceEnd=100;
     data = data.slice(sliceStart, sliceEnd);
 
     const maxColumns = 56; // Maximum number of columns
@@ -54,6 +56,17 @@ const Datablocks = (passedData) => {
       setShowModal(true);
     }
 
+    const scrollNext100 = () => {
+      setSliceStart(Math.min(passedData.passedData.blocksAccessed[0][0].blockaccessed.length-100, sliceStart + 100));
+      setSliceEnd(Math.min(passedData.passedData.blocksAccessed[0][0].blockaccessed.length, sliceEnd + 100));
+      console.log("Next", sliceStart, sliceEnd);
+    };
+    const scrollPrevious100 = () => {
+      setSliceStart(Math.max(0,sliceStart - 100));
+      setSliceEnd(Math.max(100,sliceEnd - 100));
+      console.log("Previous", sliceStart, sliceEnd);
+    };
+
     const HandleCloseModal = () => {
       //close the modal and reset select block
       setShowModal('false');
@@ -62,6 +75,13 @@ const Datablocks = (passedData) => {
   
     return (
       <div className="d-flex justify-content-start" style={{ width: '40vw', height: '50vh', overflowY: 'auto' }}>
+        <button
+          type="button"
+          className="btn btn-outline-info"
+          onClick={() => scrollPrevious100()} // Pass the blockId to HandleBlockClick
+        >
+          Previous...
+        </button>
         <div className={`row row-cols-1 row-cols-md-${maxColumns} g-2`}>
           {data.map((blockData) => {
             const tuples = blockData["tuples"];
@@ -95,9 +115,18 @@ const Datablocks = (passedData) => {
                     </div>
                   </div>
                 </div>
+                
               </div>
+              
             );
           })}
+          <button
+          type="button"
+          className="btn btn-outline-info"
+          onClick={() => scrollNext100()} // Pass the blockId to HandleBlockClick
+        >
+          Next...
+        </button>
         </div>
         {selectedBlock && (
           <DataBlockModal show={showModal} onHide={HandleCloseModal} blockId={selectedBlock} />
