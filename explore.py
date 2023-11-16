@@ -40,10 +40,10 @@ class ValidateDBConnection(Resource):
     # Corresponds to POST request
     def post(self):
         requestJSON = request.get_json()  # status code
-        dbHostIP = requestJSON.get("dbHostIP")
+        dbHostIP =  requestJSON.get("dbHostIP")
         dbPort = requestJSON.get("dbPort")
-        dbName = requestJSON.get("dbName")
-        dbUser = requestJSON.get("dbUser")
+        dbName   = requestJSON.get("dbName")
+        dbUser   = requestJSON.get("dbUser")
         dbPassword = requestJSON.get("dbPassword")
 
         # Establish the connection
@@ -51,19 +51,49 @@ class ValidateDBConnection(Resource):
             conn = psycopg2.connect(
                 database=dbName, user=dbUser, password=dbPassword, host=dbHostIP, port=dbPort
             )
-            with open("authDetails.json", "w") as outfile:
-                json.dump(requestJSON, outfile)
         except Exception as err:
             response = jsonify({'DbConnection': 'Failed : ' + str(err)})
             response.status_code = 400
             return response
 
         #
-        response = jsonify({'DbConnection': 'Successful'})
-        # response.status_code = 200
-        return response
+        tableSchema = requestJSON.get("tableSchema")
+        if tableSchema is None:
+            response = jsonify({'DbConnection': 'Successful'})
+            # response.status_code = 200
+            return response
         #
-        conn.close()
+        cursor = conn.cursor()
+        #create a temp table and select pg_relation_size and that should give the block size info
+        blockSizeSQL = "CREATE TEMP TABLE tempBlkSize AS SELECT 1 AS id;SELECT pg_relation_size('pg_temp.tempBlkSize');"
+        try :
+            cursor.execute(blockSizeSQL)
+        except Exception as err:
+
+            response = jsonify({'message': str(err)})
+            response.status_code = 400
+            return response
+        blockSize = str(cursor.fetchall()[0][0])
+
+        GetAllTablesSQL = "SELECT table_name FROM information_schema.tables  WHERE table_schema = '" + tableSchema + "'"
+        try :
+            cursor.execute(GetAllTablesSQL)
+        except Exception as err:
+
+            response = jsonify({'message': str(err)})
+            response.status_code = 400
+            return response
+        tableList = cursor.fetchall()
+
+        maxTuplesPerBlockSQL = "select json_agg(row_to_json(blocktuple)) from 	("
+        for tabix, table in enumerate(tableList):
+            maxTuplesPerBlockSQL += "select '" + table[0] + "' as tableName ,"  + blockSize + " * count(*) / sum(pg_column_size(t)) as maxTuples from " + tableSchema + "." + table[0] + " t"
+            if tabix < len(tableList) - 1 :
+                maxTuplesPerBlockSQL += " union "
+        maxTuplesPerBlockSQL +=  ")  blocktuple"
+        cursor.execute(maxTuplesPerBlockSQL)
+        response = cursor.fetchall()[0]
+        return response
 
 
 # making a class for a particular resource
