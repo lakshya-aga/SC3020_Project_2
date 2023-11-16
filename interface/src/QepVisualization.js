@@ -1,27 +1,31 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as echarts from 'echarts';
+import Modal from 'react-modal';
 
 const OrgChart = ({ data }) => {
+  const [modalContent, setModalContent] = useState(null);
+  const [showModal, setShowModal] = useState(false);
   
-function renameKeys(json) {
-  if (Array.isArray(json)) {
-    return json.map(item => renameKeys(item));
-  } else if (typeof json === 'object') {
-    const renamedObject = {};
-    for (const key in json) {
-      if (key === 'Plans') {
-        renamedObject['children'] = renameKeys(json[key]);
-      } else if (key === 'Node Type') {
-        renamedObject['name'] = json[key];
-      } else {
-        renamedObject[key] = renameKeys(json[key]);
+  function renameKeys(json) {
+    if (Array.isArray(json)) {
+      return json.map(item => renameKeys(item));
+    } else if (typeof json === 'object') {
+      const renamedObject = {};
+      for (const key in json) {
+        if (key === 'Plans') {
+          renamedObject['children'] = renameKeys(json[key]);
+        } else if (key === 'Node Type') {
+          renamedObject['name'] = json[key];
+        } else {
+          renamedObject[key] = renameKeys(json[key]);
+        }
       }
+      return renamedObject;
+    } else {
+      return json;
     }
-    return renamedObject;
-  } else {
-    return json;
   }
-}
+
   const dataChart = renameKeys(data);
 
   useEffect(() => {
@@ -101,13 +105,55 @@ function renameKeys(json) {
     option.series[0].data = [dataChart];
     myChart.setOption(option);
 
+    // Event listener for click on a node
+    myChart.on('click', (params) => {
+      const data = params.data;
+      const blockAccessed = data.blocksAccessed && data.blocksAccessed[0] && data.blocksAccessed[0][0];
+
+      let content;
+      if (blockAccessed) {
+        content = (
+          <div>
+            <p>Startup Cost: {data['Startup Cost']}</p>
+            <p>Total Cost: {data['Total Cost']}</p>
+            <p>Table Name: {blockAccessed.tablename}</p>
+            <p>No. of Tuples: {blockAccessed.blockaccessed && blockAccessed.blockaccessed[0] ? blockAccessed.blockaccessed[0].tuplecount : 'N/A'}</p>
+          </div>
+        );
+      } else {
+        content = (
+          <div>
+            <p>Startup Cost: {data['Startup Cost']}</p>
+            <p>Total Cost: {data['Total Cost']}</p>
+          </div>
+        );
+      }
+
+      setModalContent(content);
+      setShowModal(true);
+    });
+
     // Clean up when component unmounts
     return () => {
       myChart.dispose();
     };
   }, [dataChart]);
 
-  return <div id="orgChart" style={{ width: '100%', height: '200vh'}} />;
+  const closeModal = () => {
+    setShowModal(false);
+  };
+
+  return (
+    <div>
+      <div id="orgChart" style={{ width: '100%', height: '200vh' }} />
+      <Modal isOpen={showModal} onRequestClose={closeModal} contentLabel="Node Information">
+        <div>
+          <button onClick={closeModal}>Close Modal</button>
+          {modalContent}
+        </div>
+      </Modal>
+    </div>
+  );
 };
 
 export default OrgChart;
