@@ -93,7 +93,14 @@ class ValidateDBConnection(Resource):
         maxTuplesPerBlockSQL +=  ")  blocktuple"
         cursor.execute(maxTuplesPerBlockSQL)
         response = cursor.fetchall()[0]
-        return response
+        # return response
+        # changed Format from array to json
+        # print(response)
+        maxTuplesJson = dict()
+        for x in response[0]:
+            maxTuplesJson[x['tablename']] = x['maxtuples']
+        return maxTuplesJson
+
 
 
 # making a class for a particular resource
