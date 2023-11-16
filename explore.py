@@ -95,7 +95,14 @@ class ValidateDBConnection(Resource):
         maxTuplesPerBlockSQL +=  ")  blocktuple"
         cursor.execute(maxTuplesPerBlockSQL)
         response = cursor.fetchall()[0]
-        return response
+        #return response
+        #changed Format from array to json
+        print(response)
+        maxTuplesJson = dict()
+        for x in response[0]:
+           
+            maxTuplesJson[x['tablename']] = x['maxtuples']
+        return maxTuplesJson
 
 
 # making a class for a particular resource
@@ -536,15 +543,15 @@ class getMaxTuplesPerBlock(Resource):
             response.status_code = 400
             return response
         tableList = cursor.fetchall()
-
-        maxTuplesPerBlockSQL = "select json_agg(row_to_json(blocktuple)) from 	("
+        print(tableList)
+        maxTuplesPerBlockSQL = "select json_agg(row_to_json(blocktuple)) from ("
         for tabix, table in enumerate(tableList):
             maxTuplesPerBlockSQL += "select '" + table[
                 0] + "' as tableName ," + blockSize + " * count(*) / sum(pg_column_size(t)) as maxTuples from " + tableSchema + "." + \
                                     table[0] + " t"
             if tabix < len(tableList) - 1:
                 maxTuplesPerBlockSQL += " union "
-        maxTuplesPerBlockSQL += ")  blocktuple"
+        maxTuplesPerBlockSQL += ") blocktuple  "
         cursor.execute(maxTuplesPerBlockSQL)
         response = cursor.fetchall()[0]
         return response

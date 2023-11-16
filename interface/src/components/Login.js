@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 function Login() {
-  const [inputs, setInputs] = useState({ username: '', host: '', password: '', database: '', port: '' });
-  const [token, setToken] = useState(null);
+  const [inputs, setInputs] = useState({ username: '', host: '', password: '', database: '', port: '', schema: '' });
+  const [maxTuples, setMaxTuples] = useState(null);
   const navigate = useNavigate();
 
   const handleChange = (event) => {
@@ -21,15 +21,18 @@ function Login() {
         dbHostIP: inputs.host,
         dbPassword: inputs.password,
         dbName: inputs.database,
-        dbPort: inputs.port
+        dbPort: inputs.port,
+        tableSchema: inputs.schema
       });
 
       if (response.statusText == "OK") {
         // Redirect to the main page after successful login
         const data = await response.data;
-        setToken(data.token);
-        sessionStorage.setItem('token', data.token);
-        console.log('Token:', data.token);
+        setMaxTuples(data);
+        sessionStorage.setItem('maxTuples', JSON.stringify(data));
+        
+        console.log('Data:', data);
+
         navigate('/');
       } else {
         // Handle login failure here (display error message, etc.)
@@ -116,6 +119,20 @@ function Login() {
                     id="port"
                     name="port"
                     value={inputs.port}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="schema" className="form-label">
+                    Schema:
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="schema"
+                    name="schema"
+                    value={inputs.schema}
                     onChange={handleChange}
                     required
                   />
