@@ -126,19 +126,19 @@ class ExplainService(Resource):
             response.status_code = 400
             return response
 
-        # f = open('authDetails.json')
-        # data = json.load(f)
-        # dbHostIP = data["dbHostIP"]
-        # dbPort = data["dbPort"]
-        # dbName = data["dbName"]
-        # dbUser = data["dbUser"]
-        # dbPassword = data["dbPassword"]
+        f = open('authDetails.json')
+        data = json.load(f)
+        dbHostIP = data["dbHostIP"]
+        dbPort = data["dbPort"]
+        dbName = data["dbName"]
+        dbUser = data["dbUser"]
+        dbPassword = data["dbPassword"]
 
-        dbHostIP = requestJSON.get("dbHostIP")
-        dbPort = requestJSON.get("dbPort")
-        dbName = requestJSON.get("dbName")
-        dbUser = requestJSON.get("dbUser")
-        dbPassword = requestJSON.get("dbPassword")
+        # dbHostIP = requestJSON.get("dbHostIP")
+        # dbPort = requestJSON.get("dbPort")
+        # dbName = requestJSON.get("dbName")
+        # dbUser = requestJSON.get("dbUser")
+        # dbPassword = requestJSON.get("dbPassword")
 
         explainQuerySQL = "explain (analyze, verbose, BUFFERS, FORMAT json) " + querySQL
 
