@@ -106,7 +106,7 @@ class ExplainService(Resource):
     # is a GET request for this resource
     def get(self):
 
-        response = jsonify({'message': 'Use Post to send SQL'})
+        response = jsonify({'message': 'Server is running'})
         response.status_code = 400
         return response
 
