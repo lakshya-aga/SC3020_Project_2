@@ -61,7 +61,7 @@ function renameKeys(json) {
           orient: 'vertical',
           zoom: 1,
           edgeShape: 'polyline',
-          edgeForkPosition: '100%',
+          edgeForkPosition: '20%',
           initialTreeDepth: -1,
           itemStyle:{
             color: '#5bc8ec'
@@ -107,7 +107,7 @@ function renameKeys(json) {
     };
   }, [dataChart]);
 
-  return <div id="orgChart" style={{ width: '100%', height: '100vh' }} />;
+  return <div id="orgChart" style={{ width: '100%', height: '200vh'}} />;
 };
 
 export default OrgChart;
