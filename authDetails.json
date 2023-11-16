@@ -1,1 +1,1 @@
-{"dbUser": "postgres", "dbHostIP": "localhost", "dbPassword": "banach", "dbName": "postgres", "dbPort": "5430"}
+{"dbUser": "postgres", "dbHostIP": "localhost", "dbPassword": "banach", "dbName": "postgres", "dbPort": "5430", "tableSchema": "tpch1g"}
