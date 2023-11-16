@@ -51,6 +51,8 @@ class ValidateDBConnection(Resource):
             conn = psycopg2.connect(
                 database=dbName, user=dbUser, password=dbPassword, host=dbHostIP, port=dbPort
             )
+            with open("authDetails.json", "w") as outfile:
+                json.dump(requestJSON, outfile)
         except Exception as err:
             response = jsonify({'DbConnection': 'Failed : ' + str(err)})
             response.status_code = 400
@@ -299,12 +301,10 @@ class ExplainService(Resource):
                     return response
                 blocksSQLResponse = cursor.fetchall()[0]
                 node["blocksAccessed"] = blocksSQLResponse
-                print(node["nodeId"], " ", node["Node Type"], " *Count*  ", blocksSQL)
                 # print(node["nodeId"], " ", node["Node Type"], " *Tuple*  ", tupleSQL)
             else:
                 node["blocksSQL"] = ""
                 node["blocksAccessed"] = ""
-                print(node["nodeId"], " ", node["Node Type"], " << Ignore Node")
         conn.close()
         return response
 
