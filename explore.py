@@ -51,6 +51,8 @@ class ValidateDBConnection(Resource):
             conn = psycopg2.connect(
                 database=dbName, user=dbUser, password=dbPassword, host=dbHostIP, port=dbPort
             )
+            with open("authDetails.json", "w") as outfile:
+                json.dump(requestJSON, outfile)
         except Exception as err:
             response = jsonify({'DbConnection': 'Failed : ' + str(err)})
             response.status_code = 400
@@ -93,7 +95,14 @@ class ValidateDBConnection(Resource):
         maxTuplesPerBlockSQL +=  ")  blocktuple"
         cursor.execute(maxTuplesPerBlockSQL)
         response = cursor.fetchall()[0]
-        return response
+        # return response
+        # changed Format from array to json
+        # print(response)
+        maxTuplesJson = dict()
+        for x in response[0]:
+            maxTuplesJson[x['tablename']] = x['maxtuples']
+        return maxTuplesJson
+
 
 
 # making a class for a particular resource
@@ -160,8 +169,7 @@ class ExplainService(Resource):
         # Reset search_path to public
         cursor.execute("SET search_path TO public")
 
-        global nodes, tableList, predicateList, orderByList, groupByList, subplans, ignoreNodes, mainPlanProcessing, limitCount
-        # response.status_code = 200
+        global nodes, tableList, predicateList, orderByList, groupByList, subplans, ignoreNodes, mainPlanProcessing, limitCount, cacheSQLs, cacheResponse, blocksSQL, blocksSQLResponse        # response.status_code = 200
         analyze(response)
 
         # iterate through nodes tuple for MainPlanProcessing
@@ -181,6 +189,8 @@ class ExplainService(Resource):
                 analyze_node(node);
 
         # iterate through nodes tuple for MainPlanProcessing
+        cacheSQLs = ()
+        cacheResponse = ()
         for node in nodes:
             # print("Processing ", node["nodeId"])
             tableList = ();
@@ -290,17 +300,32 @@ class ExplainService(Resource):
                 node["blocksSQL"] = blocksSQL
                 node["tupleSQL"] = tupleSQL
 
-                try:
-                    cursor.execute(blocksSQL)
-                except Exception as err:
-
-                    response = jsonify({'message': str(err)})
-                    response.status_code = 400
-                    return response
-                blocksSQLResponse = cursor.fetchall()[0]
-                node["blocksAccessed"] = blocksSQLResponse
                 print(node["nodeId"], " ", node["Node Type"], " *Count*  ", blocksSQL)
-                # print(node["nodeId"], " ", node["Node Type"], " *Tuple*  ", tupleSQL)
+
+                sqlFoundInCache = False;
+                sqlIx = 0
+                for cacheIx, cacheSql in enumerate(cacheSQLs):
+                    if cacheSql == blocksSQL:
+                        sqlFoundInCache = True
+                        sqlIx = cacheIx
+                        break
+                if sqlFoundInCache:
+                    print(node["nodeId"], " cache hit at slot ", sqlIx)
+                    node["blocksAccessed"] = cacheResponse[sqlIx]
+                else:
+                    try:
+                        cursor.execute(blocksSQL)
+                        blocksSQLResponse = cursor.fetchall()[0]
+                    except Exception as err:
+                        print("*Exception ", blocksSQL)
+                        # response = jsonify({'message': str(err)})
+                        # response.status_code = 400
+                        # return response
+                        blocksSQLResponse = ""
+                    node["blocksAccessed"] = blocksSQLResponse
+                    # print(node["nodeId"], " ", node["Node Type"], " *Tuple*  ", tupleSQL)
+                    cacheSQLs += (blocksSQL,)
+                    cacheResponse += (blocksSQLResponse,)
             else:
                 node["blocksSQL"] = ""
                 node["blocksAccessed"] = ""
@@ -330,21 +355,21 @@ def analyze_plan(plan):
 
 
 def analyze_node(node):
-    global tableList, predicateList, orderByList, groupByList, subplans, ignoreNodes,  mainPlanProcessing, limitCount
+    global tableList, predicateList, orderByList, groupByList, subplans, ignoreNodes, mainPlanProcessing, limitCount, cacheSQLs
 
     if 'Plans' in node.keys():
         for childnode in node['Plans']:
-            #print("Drilling to ", childnode["nodeId"])
-            if ("Subplan Name"  in node and mainPlanProcessing):        # Subplan query is already built.. so no need to traverse subplan tree
+            # print("Drilling to ", childnode["nodeId"])
+            if ("Subplan Name" in node and mainPlanProcessing):  # Subplan query is already built.. so no need to traverse subplan tree
                 break
             else:
                 analyze_node(childnode)
 
-    if node["Node Type"]  in ignoreNodes:
+    if node["Node Type"] in ignoreNodes:
         return
 
     if ("Relation Name" in node):
-        table = node["Schema"]+"."+node["Relation Name"]+ " " + node["Alias"]
+        table = node["Schema"] + "." + node["Relation Name"] + " " + node["Alias"]
         if table not in tableList:
             tableList += (table,);
 
@@ -355,8 +380,58 @@ def analyze_node(node):
 
     if ("Filter" in node):
         predicateVar = node["Filter"]
-        if predicateVar not in predicateList:
-            predicateList += (predicateVar,);
+        if ("Group Key") in node:
+            # replace subplan query if exist
+            groupbyKey = node["Group Key"][0]
+            parmpos = predicateVar.find(" $")
+            if parmpos > 0:
+                subplanNum = int(predicateVar[parmpos + 2:parmpos + 3])
+                predicateVar = predicateVar[0:parmpos + 1] + '(' + subplans[subplanNum - 1] + ')' + predicateVar[parmpos + 4:]
+                buildGroupByHavingSQL = groupbyKey + ' in (select ' + groupbyKey + ' from '
+                for tableix, table in enumerate(tableList):
+                    buildGroupByHavingSQL += table
+                    if tableix != len(tableList) - 1:
+                        buildGroupByHavingSQL += ', '
+                if len(predicateList) > 0:
+                    buildGroupByHavingSQL += " WHERE "
+                    for whereClauseIx, whereClauseVar in enumerate(predicateList):
+                        buildGroupByHavingSQL += whereClauseVar
+                        if whereClauseIx != len(predicateList) - 1:
+                            buildGroupByHavingSQL += " and "
+                buildGroupByHavingSQL += ' Group by ' + groupbyKey + ' having  ' + predicateVar + ' )) '
+                predicateVar = '#SUBPLAN#' + buildGroupByHavingSQL
+                predicateList += (predicateVar,)
+            else:
+                buildGroupByHavingSQL = groupbyKey + ' in (select ' + groupbyKey + ' from '
+                for tableix, table in enumerate(tableList):
+                    buildGroupByHavingSQL += table
+                    if tableix != len(tableList) - 1:
+                        buildGroupByHavingSQL += ', '
+                if len(predicateList) > 0:
+                    buildGroupByHavingSQL += " WHERE "
+                    for whereClauseIx, whereClauseVar in enumerate(predicateList):
+                        buildGroupByHavingSQL += whereClauseVar
+                        if whereClauseIx != len(predicateList) - 1:
+                            buildGroupByHavingSQL += " and "
+                buildGroupByHavingSQL += ' Group by ' + groupbyKey + ' having  ' + predicateVar + ' ) '
+                predicateVar = '#SUBPLAN#' + buildGroupByHavingSQL
+                predicateList += (predicateVar,)
+
+        else:
+            subplanPos = predicateVar.find("SubPlan ")
+            if subplanPos >= 0:
+                if predicateVar.find("hashed SubPlan ") > 0:
+                    subplanPos = predicateVar.find("hashed SubPlan ")
+                    subplanNum = int(predicateVar[subplanPos + 15: subplanPos + 16])
+                    predicateVar = '#SUBPLAN#' + predicateVar[0: subplanPos] + subplans[subplanNum - 1] + predicateVar[subplanPos + 16:]
+                else:
+                    subplanNum = int(predicateVar[subplanPos + 8: subplanPos + 9])
+                    predicateVar = '#SUBPLAN#' + predicateVar[0: subplanPos] + subplans[subplanNum - 1] + predicateVar[subplanPos + 9:]
+                predicateList += (predicateVar,);
+
+            else:
+                if predicateVar not in predicateList:
+                    predicateList += (predicateVar,);
 
     if ("Hash Cond" in node):
         predicateVar = node["Hash Cond"]
@@ -376,28 +451,32 @@ def analyze_node(node):
     if ("Join Filter" in node):
         predicateVar = node["Join Filter"]
         subplanPos = predicateVar.find("SubPlan ")
-        if subplanPos >= 0 :
-            #subplanName = predicateVar[subplanPos: subplanPos + 10]
-            subplanNum  = int(predicateVar[subplanPos + 8: subplanPos + 9])
-            predicateVar = '#SUBPLAN#' + predicateVar[0: subplanPos ] + subplans[subplanNum-1] + predicateVar[subplanPos + 9: ]
+        if subplanPos >= 0:
+            # subplanName = predicateVar[subplanPos: subplanPos + 10]
+            subplanNum = int(predicateVar[subplanPos + 8: subplanPos + 9])
+            predicateVar = '#SUBPLAN#' + predicateVar[0: subplanPos] + subplans[subplanNum - 1] + predicateVar[subplanPos + 9: ]
             predicateList += (predicateVar,);
 
-    if ("Subplan Name" in node and not mainPlanProcessing) :
+    if ("Subplan Name" in node and not mainPlanProcessing):
         subplanName = node["Subplan Name"]
-        subplanNum  = int(subplanName[8:])
-        subplanQuery = "SELECT " +  node["Output"][0] + " FROM "
-        for tableix,  table in enumerate(tableList) :
+        subplanpos = subplanName.find("(returns $")
+        if subplanpos > 0:
+            subplanNum = int(subplanName[subplanpos + 10: subplanpos + 11])
+        else:
+            subplanNum = int(subplanName[8:])
+        subplanQuery = "SELECT " + node["Output"][0] + " FROM "
+        for tableix, table in enumerate(tableList):
             subplanQuery += table
-            if tableix != len(tableList) -1:
+            if tableix != len(tableList) - 1:
                 subplanQuery += ', '
-        if len(predicateList) >= 0 :
+        if len(predicateList) > 0:
             subplanQuery += " WHERE "
-            for  whereClauseIx, whereClauseVar  in enumerate(predicateList) :
+            for whereClauseIx, whereClauseVar in enumerate(predicateList):
                 subplanQuery += whereClauseVar
                 if whereClauseIx != len(predicateList) - 1:
                     subplanQuery = subplanQuery + " and "
 
-        if len(subplans) == 0 or subplanNum >len(subplans):
+        if len(subplans) == 0 or subplanNum > len(subplans):
             subplans += (subplanQuery,)
         else:
             subplanslist = list(subplans)
