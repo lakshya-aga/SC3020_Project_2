@@ -61,14 +61,14 @@ class ValidateDBConnection(Resource):
         cursor = conn.cursor()
 
         # We need a type defintiionc "TableBlockTuple". If authentication is successful then create type. Ignore if it fails with exception
-        try :
+        try:
             cursor.execute("CREATE TYPE TableBlockTuple AS ( block text ,tupleCount text )")
-            conn.commit()
         except Exception as err:
-            if not str(err).find("already exits"):
+            if not str(err).find("already exists"):
                 response = jsonify({'message': str(err)})
                 response.status_code = 400
                 return response
+        conn.commit()
         #
         tableSchema = requestJSON.get("tableSchema")
         if tableSchema is None:
