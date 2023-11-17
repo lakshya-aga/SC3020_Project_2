@@ -66,7 +66,7 @@ class ValidateDBConnection(Resource):
         cursor = conn.cursor()
         #create a temp table and select pg_relation_size and that should give the block size info
         blockSizeSQL = "CREATE TEMP TABLE tempBlkSize AS SELECT 1 AS id;SELECT pg_relation_size('pg_temp.tempBlkSize');"
-        try :
+        try:
             cursor.execute(blockSizeSQL)
         except Exception as err:
 
@@ -635,3 +635,6 @@ api.add_resource(getMaxTuplesPerBlock, '/getMaxTuples')
 # driver function
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
