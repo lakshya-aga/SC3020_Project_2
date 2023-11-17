@@ -83,12 +83,25 @@ const Datablocks = ({ data }) => {
     end: 100, // Initially display the first 100 blocks
   });
 
+
   const tupleSQL = data.tupleSQL;
 
   const blocksAccessed = data.blocksAccessed[0];
 
   const maxColumns = 3; // Maximum number of columns
   const columnWidth = 12 / maxColumns; // Bootstrap column width calculation
+
+  const [resetKey, setResetKey] = useState(0); // Introduce a reset key
+
+  useEffect(() => {
+    // Reset displayedBlocks to original settings when tupleSQL changes
+    setDisplayedBlocks({
+      start: 0,
+      end: 100,
+    });
+    // Increment the reset key to trigger a re-render
+    setResetKey((prevKey) => prevKey + 1);
+  }, [tupleSQL]);
 
   const handleBlockClick = (tablename, aliasname, blockNum) => {
     // Set selected block and show modal
@@ -126,10 +139,11 @@ const Datablocks = ({ data }) => {
     });
   };
   
+  
   var maxTuples = JSON.parse(sessionStorage.getItem('maxTuples'));
   
   return (
-    <div className={'container mt-4'}>
+    <div key={resetKey} className={'container mt-4'}>
     <div className="d-flex justify-content-start" style={{ width: '40vw', height: '50vh', overflowY: 'auto' }}>
       <div className={`row row-cols-1 row-cols-md-${maxColumns} g-2`}>
         {blocksAccessed.map((tableBlock, index) => {
@@ -140,7 +154,7 @@ const Datablocks = ({ data }) => {
 
             const fillPercentage = (tuples/ maxTuples[tablename]) * 100; // Calculate fill percentage
             return (
-              <div className={`col-md-${columnWidth}`} key={`${tablename}-${blocks}`}>
+              <div className={`col-md-${columnWidth}`} key={`${tablename}-${blocks}`} style={{ width: '180px' }}>
                 <div className="card">
                   <div className="card-body">
                     <div className="text-center">
@@ -155,7 +169,7 @@ const Datablocks = ({ data }) => {
                         aria-valuenow={fillPercentage}
                         aria-valuemin="0"
                         aria-valuemax="100"
-                      ></div> <span style={{ color: 'black' }}>{`${fillPercentage.toFixed(2)}%`}</span>
+                      ></div>
                     </div>
                     <div style={{ fontSize: 12.5}}>Block Capacity: {maxTuples[tablename]} Tuples</div>
                     <div className="text-center">

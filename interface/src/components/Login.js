@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import './LoadingScreen.css';
 
 function Login() {
   const [inputs, setInputs] = useState({ username: '', host: '', password: '', database: '', port: '', schema: '' });
+  const [loading, setLoading] = useState(false);
   const [maxTuples, setMaxTuples] = useState(null);
   const navigate = useNavigate();
 
@@ -14,7 +16,8 @@ function Login() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    // TODO: Add backend credentials check and fetch profile info logic here
+    setLoading(true);
+
     try {
       const response = await axios.post("http://127.0.0.1:5000/authenticate", {
         dbUser: inputs.username,
@@ -26,14 +29,14 @@ function Login() {
       });
 
       if (response.statusText == "OK") {
-        // Redirect to the main page after successful login
+        // Redirect to the main page after successful authentication
         const data = await response.data;
         setMaxTuples(data);
         sessionStorage.setItem('maxTuples', JSON.stringify(data));
         
         console.log('Data:', data);
 
-        navigate('/');
+        navigate('/app');
       } else {
         // Handle login failure here (display error message, etc.)
 
@@ -44,6 +47,8 @@ function Login() {
       // Handle network errors or other exceptions here
       alert("Enter valid authentication details")
       console.error('Error:', error);
+    }finally {
+      setLoading(false);
     }
   };
 
@@ -56,6 +61,7 @@ function Login() {
             <div className="card-body">
               <h1 className="card-title text-center">Welcome</h1>
               <form onSubmit={handleSubmit}>
+              {loading && <div className="loading"></div>}
                 <div className="mb-3">
                   <label htmlFor="username" className="form-label">
                     Username:
@@ -141,7 +147,7 @@ function Login() {
                   />
                 </div>
                 <div className="d-grid gap-2">
-                  <button type="submit" className="btn btn-primary">
+                  <button type="submit" className="btn btn-info">
                     Authenticate
                   </button>
                 </div>

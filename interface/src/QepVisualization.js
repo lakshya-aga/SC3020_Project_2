@@ -39,6 +39,7 @@ const OrgChart = ({ data }) => {
   useEffect(() => {
     const chartDom = document.getElementById('orgChart');
     const myChart = echarts.init(chartDom);
+
     const option = {
       tooltip: {
         trigger: 'item',
@@ -144,7 +145,7 @@ const OrgChart = ({ data }) => {
       const isScan = data.name.includes('Scan');
       const isJoin = data.name.includes('Join');
       const isSort = data.name.includes('Sort');
-
+      
       if (blockAccessed && isScan) {
         generalContent = (
           <div>
@@ -187,6 +188,18 @@ const OrgChart = ({ data }) => {
           <p>Buffer Size: {data['Shared Hit Blocks']*8}</p>
           <p>Actual Rows: {data['Actual Rows']*8}</p>
           </div>);
+      } else if(data.name == 'Hash') {
+        generalContent = (
+          <div>
+          {data['Hash Buckets'] ? <p>Hash Buckets: {data['Hash Buckets']}</p> : null}
+          <p>Startup Cost: {data['Startup Cost']}</p>
+          <p>Total Cost: {data['Total Cost']}</p>
+          <p>Startup Time: {data['Actual Startup Time']}</p>
+          <p>Total Time: {data['Actual Total Time']}</p>
+          <p>No. of Buffers: {data['Shared Hit Blocks']}</p>
+          <p>Buffer Size: {data['Shared Hit Blocks']*8}</p>
+          <p>Actual Rows: {data['Actual Rows']*8}</p>
+          </div>);
       } else {
         generalContent = (
           <div>
@@ -212,12 +225,13 @@ const OrgChart = ({ data }) => {
               {blockAccessed.map((tableBlock) => {
                 const { tablename, blockaccessed} = tableBlock;
                 console.log(tablename)
+                console.log("Check:",displayedBlocks.start)
                 return blockaccessed.slice(displayedBlocks.start, displayedBlocks.end).map((blockInfo) => {
                   const { blocks, tuples } = blockInfo;
                   console.log("Blocks:",blocks)
                   console.log("Tuples:",tuples)
                   return (
-                    <div className={`col-md-${columnWidth}`} key={`${tablename}-${blocks}`}>
+                    <div className={`col-md-${columnWidth}`} key={`${tablename}-${blocks}`} style={{ width: '180px' }}>
                       <div className="card">
                         <div className="card-body">
                           <div className="text-center">
@@ -277,7 +291,7 @@ const OrgChart = ({ data }) => {
     return () => {
       myChart.dispose();
     };
-  }, [dataChart, activeTab,displayedBlocks.start, displayedBlocks.end, maxBlocksToRender]);
+  }, [dataChart, activeTab,displayedBlocks,displayedBlocks.start, displayedBlocks.end, maxBlocksToRender]);
 
   const closeModal = () => {
     setShowModal(false);
@@ -292,7 +306,7 @@ const OrgChart = ({ data }) => {
         contentLabel="Node Information"
         style={{
           content: {
-            width: '50%', // Adjust the width as needed
+            width: '45%', // Adjust the width as needed
             height: '50%', // Adjust the height as needed
             margin: 'auto', // Center the modal horizontally
           },

@@ -1,7 +1,7 @@
 // SqlQueryInput.js
 import React, { useState } from 'react';
 import axios from 'axios';
-import './LoadingScreen.css'; // Import CSS file for styling
+import './LoadingScreen.css';
 
 const SqlQueryInput = ({ onReceiveJsonData }) => {
   const [sqlQuery, setSqlQuery] = useState('');
