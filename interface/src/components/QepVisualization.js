@@ -51,7 +51,11 @@ const OrgChart = ({ data }) => {
           if (blockAccessed && isScan) {
             return `Table Name: ${blockAccessed.tablename}
               <br> No. of Blocks Accessed: ${blockAccessed.blockaccessed.length}`;
-          } else {
+          } 
+          else if (isScan) {
+            return `Table Name: ${data['Relation Name']}`;
+          }
+          else {
             return `Startup Cost: ${data['Startup Cost']} 
               <br> Total Cost: ${data['Total Cost']}`;
           }
@@ -146,7 +150,7 @@ const OrgChart = ({ data }) => {
       const isJoin = data.name.includes('Join');
       const isSort = data.name.includes('Sort');
       
-      if (blockAccessed && isScan) {
+      if (isScan) {
         generalContent = (
           <div>
           <p>Relation Name: {data['Relation Name']}</p>
