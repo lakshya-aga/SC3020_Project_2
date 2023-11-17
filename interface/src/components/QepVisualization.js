@@ -39,7 +39,7 @@ const OrgChart = ({ data }) => {
   useEffect(() => {
     const chartDom = document.getElementById('orgChart');
     const myChart = echarts.init(chartDom);
-
+    
     const option = {
       tooltip: {
         trigger: 'item',
