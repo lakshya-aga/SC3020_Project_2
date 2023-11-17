@@ -1,27 +1,39 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as echarts from 'echarts';
+import Modal from 'react-modal';
 
 const OrgChart = ({ data }) => {
+  const [generalContent, setGeneralContent] = useState(null);
+  const [intermediateContent, setIntermediateContent] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
+  const [displayedBlocks, setDisplayedBlocks] = useState({
+    start: 0,
+    end: 100, // Initially display the first 100 blocks
+  });
+
+  const maxBlocksToRender = 100; // Maximum number of blocks to render
   
-function renameKeys(json) {
-  if (Array.isArray(json)) {
-    return json.map(item => renameKeys(item));
-  } else if (typeof json === 'object') {
-    const renamedObject = {};
-    for (const key in json) {
-      if (key === 'Plans') {
-        renamedObject['children'] = renameKeys(json[key]);
-      } else if (key === 'Node Type') {
-        renamedObject['name'] = json[key];
-      } else {
-        renamedObject[key] = renameKeys(json[key]);
+  function renameKeys(json) {
+    if (Array.isArray(json)) {
+      return json.map(item => renameKeys(item));
+    } else if (typeof json === 'object') {
+      const renamedObject = {};
+      for (const key in json) {
+        if (key === 'Plans') {
+          renamedObject['children'] = renameKeys(json[key]);
+        } else if (key === 'Node Type') {
+          renamedObject['name'] = json[key];
+        } else {
+          renamedObject[key] = renameKeys(json[key]);
+        }
       }
+      return renamedObject;
+    } else {
+      return json;
     }
-    return renamedObject;
-  } else {
-    return json;
   }
-}
+
   const dataChart = renameKeys(data);
 
   useEffect(() => {
@@ -34,11 +46,10 @@ function renameKeys(json) {
         formatter: (params) => {
           const data = params.data;
           const blockAccessed = data.blocksAccessed && data.blocksAccessed[0] && data.blocksAccessed[0][0];
-          if (blockAccessed) {
-            return `Startup Cost: ${data['Startup Cost']} 
-              <br> Total Cost: ${data['Total Cost']} 
-              <br> Table Name: ${blockAccessed.tablename}
-              <br> No. of Blocks: ${blockAccessed.blockaccessed.length}`;
+          const isScan = data.name.includes('Scan');
+          if (blockAccessed && isScan) {
+            return `Table Name: ${blockAccessed.tablename}
+              <br> No. of Blocks Accessed: ${blockAccessed.blockaccessed.length}`;
           } else {
             return `Startup Cost: ${data['Startup Cost']} 
               <br> Total Cost: ${data['Total Cost']}`;
@@ -100,13 +111,192 @@ function renameKeys(json) {
     option.series[0].data = [dataChart];
     myChart.setOption(option);
 
+
+    // Event listener for click on a node
+    myChart.on('click', (params) => {
+      const data = params.data;
+      const blockAccessed = data.blocksAccessed[0];
+      console.log(blockAccessed)
+
+      const handleLoadMore = () => {
+        setDisplayedBlocks((prev) => ({
+          start: prev.start + maxBlocksToRender,
+          end: prev.end + maxBlocksToRender,
+        }));
+      };
+    
+      const handleLoadPrevious = () => {
+        setDisplayedBlocks((prev) => ({
+          start: Math.max(0, prev.start - maxBlocksToRender),
+          end: Math.max(maxBlocksToRender, prev.end - maxBlocksToRender),
+        }));
+      };
+    
+      const handleJumpToStart = () => {
+        setDisplayedBlocks({
+          start: 0,
+          end: maxBlocksToRender,
+        });
+      };
+
+      var generalContent;
+      if (blockAccessed) {
+        generalContent = (
+          <div>
+          <p>Startup Cost: {data['Startup Cost']}</p>
+           <p>Total Cost: {data['Total Cost']}</p>
+          <p>Table Name: {blockAccessed.tablename}</p>
+          {/* <p>No. of Blocks: {blockAccessed.blockAccessed.block.length}</p> */}
+          </div>);
+      } else {
+        generalContent = (
+          <div>
+          <p>Startup Cost: {data['Startup Cost']}</p>
+           <p>Total Cost: {data['Total Cost']}</p>
+          </div>);
+      }
+
+      const maxColumns = 3; // Maximum number of columns
+      const columnWidth = 9 / maxColumns; // Bootstrap column width calculation
+
+      const intermediateResultsAvailable = data.blocksAccessed && data.blocksAccessed[0];
+  
+      const intermediateContent = intermediateResultsAvailable && (
+        <div className={'container mt-4'}>
+          <div className="d-flex justify-content-start" style={{ width: '45vw', height: '50vh', overflowY: 'auto' }}>
+            <div className={`row row-cols-1 row-cols-md-${maxColumns} g-2`}>
+              {blockAccessed.map((tableBlock) => {
+                const { tablename, blockaccessed} = tableBlock;
+                console.log(tablename)
+                return blockaccessed.slice(displayedBlocks.start, displayedBlocks.end).map((blockInfo) => {
+                  const { blocks, tuples } = blockInfo;
+                  console.log("Blocks:",blocks)
+                  console.log("Tuples:",tuples)
+                  return (
+                    <div className={`col-md-${columnWidth}`} key={`${tablename}-${blocks}`}>
+                      <div className="card">
+                        <div className="card-body">
+                          <div className="text-center">
+                            <h5 className="card-title">Table: {tablename}</h5>
+                            <h7 className="card-title">Block Number: {blocks}</h7>
+                          <div className="text-center">
+                          <button
+                            type="button"
+                            className="btn btn-outline-info"
+                            disabled ='true'
+                            >
+                              {tuples} Tuple{tuples !== '1' ? 's' : ''}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    </div>
+                  );
+                });
+              })}
+            </div>
+            </div>
+            <div className="text-center mt-3">
+            <button
+                type="button"
+                className="btn btn-info mx-2"
+                onClick={handleJumpToStart}
+                disabled={displayedBlocks.start === 0}
+              >
+                Jump to Start
+              </button>
+              <button
+                type="button"
+                className="btn btn-info mx-2"
+                onClick={handleLoadPrevious}
+                disabled={displayedBlocks.start === 0}
+              >
+                Load Previous
+              </button>
+              <button
+                type="button"
+                className="btn btn-info mx-2"
+                onClick={handleLoadMore}
+              >
+                Load More
+              </button>
+            </div>
+            </div>
+      );
+      setGeneralContent(generalContent);
+      setIntermediateContent(intermediateContent);
+      setShowModal(true);
+    });
+
     // Clean up when component unmounts
     return () => {
       myChart.dispose();
     };
-  }, [dataChart]);
+  }, [dataChart, activeTab,displayedBlocks.start, displayedBlocks.end, maxBlocksToRender]);
 
-  return <div id="orgChart" style={{ width: '100%', height: '200vh'}} />;
+  const closeModal = () => {
+    setShowModal(false);
+  };
+
+  return (
+    <div>
+      <div id="orgChart" style={{ width: '100%', height: '200vh' }} />
+      <Modal
+        isOpen={showModal}
+        onRequestClose={closeModal}
+        contentLabel="Node Information"
+        style={{
+          content: {
+            width: '50%', // Adjust the width as needed
+            height: '50%', // Adjust the height as needed
+            margin: 'auto', // Center the modal horizontally
+          },
+          overlay: {
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', // Adjust the overlay background color and transparency
+          },
+        }}
+      >
+        <div>
+          <ul className="nav nav-tabs">
+            <li className="nav-item">
+              <a
+                className={`nav-link ${activeTab === 'general' ? 'active' : ''}`}
+                onClick={() => setActiveTab('general')}
+                role="button"
+              >
+                General Statistics
+              </a>
+            </li>
+            {intermediateContent && (
+            <li className="nav-item">
+              <a
+                className={`nav-link ${activeTab === 'intermediate' ? 'active' : ''}`}
+                onClick={() => setActiveTab('intermediate')}
+                role="button"
+              >
+                Intermediate Results
+              </a>
+            </li>
+          )}
+          </ul>
+          <div className="tab-content mt-2">
+            <div className={`tab-pane ${activeTab === 'general' ? 'active' : ''}`}>
+              {generalContent}
+            </div>
+            {intermediateContent && (
+            <div className={`tab-pane ${activeTab === 'intermediate' ? 'active' : ''}`}>
+              {intermediateContent}
+            </div>
+          )}
+          </div>
+          <button type="button" className="btn btn-outline-info mx-2" onClick={closeModal}>
+            Close
+          </button>
+        </div>
+      </Modal>
+    </div>
+  );
 };
 
 export default OrgChart;
