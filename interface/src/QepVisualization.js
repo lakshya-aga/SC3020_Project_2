@@ -7,6 +7,12 @@ const OrgChart = ({ data }) => {
   const [intermediateContent, setIntermediateContent] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
+  const [displayedBlocks, setDisplayedBlocks] = useState({
+    start: 0,
+    end: 100, // Initially display the first 100 blocks
+  });
+
+  const maxBlocksToRender = 100; // Maximum number of blocks to render
   
   function renameKeys(json) {
     if (Array.isArray(json)) {
@@ -40,11 +46,10 @@ const OrgChart = ({ data }) => {
         formatter: (params) => {
           const data = params.data;
           const blockAccessed = data.blocksAccessed && data.blocksAccessed[0] && data.blocksAccessed[0][0];
-          if (blockAccessed) {
-            return `Startup Cost: ${data['Startup Cost']} 
-              <br> Total Cost: ${data['Total Cost']} 
-              <br> Table Name: ${blockAccessed.tablename}
-              <br> No. of Blocks: ${blockAccessed.blockaccessed.length}`;
+          const isScan = data.name.includes('Scan');
+          if (blockAccessed && isScan) {
+            return `Table Name: ${blockAccessed.tablename}
+              <br> No. of Blocks Accessed: ${blockAccessed.blockaccessed.length}`;
           } else {
             return `Startup Cost: ${data['Startup Cost']} 
               <br> Total Cost: ${data['Total Cost']}`;
@@ -106,25 +111,119 @@ const OrgChart = ({ data }) => {
     option.series[0].data = [dataChart];
     myChart.setOption(option);
 
+
     // Event listener for click on a node
     myChart.on('click', (params) => {
       const data = params.data;
-      const blockAccessed = data.blocksAccessed && data.blocksAccessed[0] && data.blocksAccessed[0][0];
+      const blockAccessed = data.blocksAccessed[0];
+      console.log(blockAccessed)
 
-      const generalContent = (
-        <div>
+      const handleLoadMore = () => {
+        setDisplayedBlocks((prev) => ({
+          start: prev.start + maxBlocksToRender,
+          end: prev.end + maxBlocksToRender,
+        }));
+      };
+    
+      const handleLoadPrevious = () => {
+        setDisplayedBlocks((prev) => ({
+          start: Math.max(0, prev.start - maxBlocksToRender),
+          end: Math.max(maxBlocksToRender, prev.end - maxBlocksToRender),
+        }));
+      };
+    
+      const handleJumpToStart = () => {
+        setDisplayedBlocks({
+          start: 0,
+          end: maxBlocksToRender,
+        });
+      };
+
+      var generalContent;
+      if (blockAccessed) {
+        generalContent = (
+          <div>
           <p>Startup Cost: {data['Startup Cost']}</p>
-          <p>Total Cost: {data['Total Cost']}</p>
-        </div>
-      );
-
-      const intermediateContent = (
-        <div>
+           <p>Total Cost: {data['Total Cost']}</p>
           <p>Table Name: {blockAccessed.tablename}</p>
-          <p>No. of Tuples: {blockAccessed.blockaccessed && blockAccessed.blockaccessed[0] ? blockAccessed.blockaccessed[0].tuplecount : 'N/A'}</p>
-        </div>
-      );
+          {/* <p>No. of Blocks: {blockAccessed.blockAccessed.block.length}</p> */}
+          </div>);
+      } else {
+        generalContent = (
+          <div>
+          <p>Startup Cost: {data['Startup Cost']}</p>
+           <p>Total Cost: {data['Total Cost']}</p>
+          </div>);
+      }
 
+      const maxColumns = 3; // Maximum number of columns
+      const columnWidth = 9 / maxColumns; // Bootstrap column width calculation
+
+      const intermediateResultsAvailable = data.blocksAccessed && data.blocksAccessed[0];
+  
+      const intermediateContent = intermediateResultsAvailable && (
+        <div className={'container mt-4'}>
+          <div className="d-flex justify-content-start" style={{ width: '45vw', height: '50vh', overflowY: 'auto' }}>
+            <div className={`row row-cols-1 row-cols-md-${maxColumns} g-2`}>
+              {blockAccessed.map((tableBlock) => {
+                const { tablename, blockaccessed} = tableBlock;
+                console.log(tablename)
+                return blockaccessed.slice(displayedBlocks.start, displayedBlocks.end).map((blockInfo) => {
+                  const { blocks, tuples } = blockInfo;
+                  console.log("Blocks:",blocks)
+                  console.log("Tuples:",tuples)
+                  return (
+                    <div className={`col-md-${columnWidth}`} key={`${tablename}-${blocks}`}>
+                      <div className="card">
+                        <div className="card-body">
+                          <div className="text-center">
+                            <h5 className="card-title">Table: {tablename}</h5>
+                            <h7 className="card-title">Block Number: {blocks}</h7>
+                          <div className="text-center">
+                          <button
+                            type="button"
+                            className="btn btn-outline-info"
+                            disabled ='true'
+                            >
+                              {tuples} Tuple{tuples !== '1' ? 's' : ''}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    </div>
+                  );
+                });
+              })}
+            </div>
+            </div>
+            <div className="text-center mt-3">
+            <button
+                type="button"
+                className="btn btn-info mx-2"
+                onClick={handleJumpToStart}
+                disabled={displayedBlocks.start === 0}
+              >
+                Jump to Start
+              </button>
+              <button
+                type="button"
+                className="btn btn-info mx-2"
+                onClick={handleLoadPrevious}
+                disabled={displayedBlocks.start === 0}
+              >
+                Load Previous
+              </button>
+              <button
+                type="button"
+                className="btn btn-info mx-2"
+                onClick={handleLoadMore}
+              >
+                Load More
+              </button>
+            </div>
+            </div>
+      );
       setGeneralContent(generalContent);
       setIntermediateContent(intermediateContent);
       setShowModal(true);
@@ -134,7 +233,7 @@ const OrgChart = ({ data }) => {
     return () => {
       myChart.dispose();
     };
-  }, [dataChart, activeTab]);
+  }, [dataChart, activeTab,displayedBlocks.start, displayedBlocks.end, maxBlocksToRender]);
 
   const closeModal = () => {
     setShowModal(false);
@@ -169,6 +268,7 @@ const OrgChart = ({ data }) => {
                 General Statistics
               </a>
             </li>
+            {intermediateContent && (
             <li className="nav-item">
               <a
                 className={`nav-link ${activeTab === 'intermediate' ? 'active' : ''}`}
@@ -178,17 +278,20 @@ const OrgChart = ({ data }) => {
                 Intermediate Results
               </a>
             </li>
+          )}
           </ul>
           <div className="tab-content mt-2">
             <div className={`tab-pane ${activeTab === 'general' ? 'active' : ''}`}>
               {generalContent}
             </div>
+            {intermediateContent && (
             <div className={`tab-pane ${activeTab === 'intermediate' ? 'active' : ''}`}>
               {intermediateContent}
             </div>
+          )}
           </div>
-          <button type="button" className="btn btn-info mx-2" onClick={closeModal}>
-            Close Modal
+          <button type="button" className="btn btn-outline-info mx-2" onClick={closeModal}>
+            Close
           </button>
         </div>
       </Modal>
