@@ -140,19 +140,63 @@ const OrgChart = ({ data }) => {
       };
 
       var generalContent;
-      if (blockAccessed) {
+
+      const isScan = data.name.includes('Scan');
+      const isJoin = data.name.includes('Join');
+      const isSort = data.name.includes('Sort');
+
+      if (blockAccessed && isScan) {
         generalContent = (
           <div>
+          <p>Relation Name: {data['Relation Name']}</p>
+          {data['Index Name'] ? <p>Index Name: {data['Index Name']}</p> : null}
+          {data['Index Cond'] ? <p>Index Condition: {data['Index Cond']}</p> : null}
+          {data['Filter'] ? <p>Filter: {data['Filter']}</p> : null}
           <p>Startup Cost: {data['Startup Cost']}</p>
-           <p>Total Cost: {data['Total Cost']}</p>
-          <p>Table Name: {blockAccessed.tablename}</p>
-          {/* <p>No. of Blocks: {blockAccessed.blockAccessed.block.length}</p> */}
+          <p>Total Cost: {data['Total Cost']}</p>
+          <p>Startup Time: {data['Actual Startup Time']}</p>
+          <p>Total Time: {data['Actual Total Time']}</p>
+          <p>No. of Buffers: {data['Shared Hit Blocks']}</p>
+          <p>Buffer Size: {data['Shared Hit Blocks']*8}</p>
+          <p>Actual Rows: {data['Actual Rows']*8}</p>
+          </div>);
+      } else if(blockAccessed && isJoin) {
+        generalContent = (
+          <div>
+          {data['Join Type'] ? <p>Join Type: {data['Join Type']}</p> : null}
+          {data['Merge Cond'] ? <p>Join Cond: {data['Merge Cond']}</p> : null}
+          {data['Hash Cond'] ? <p>Join Cond: {data['Hash Cond']}</p> : null}
+          <p>Startup Cost: {data['Startup Cost']}</p>
+          <p>Total Cost: {data['Total Cost']}</p>
+          <p>Startup Time: {data['Actual Startup Time']}</p>
+          <p>Total Time: {data['Actual Total Time']}</p>
+          <p>No. of Buffers: {data['Shared Hit Blocks']}</p>
+          <p>Buffer Size: {data['Shared Hit Blocks']*8}</p>
+          <p>Actual Rows: {data['Actual Rows']*8}</p>
+          </div>);
+      } else if(blockAccessed && isSort) {
+        generalContent = (
+          <div>
+          {data['Sort Key'] ? <p>Sort Key: {data['Sort Key']}</p> : null}
+          {data['Sort Method'] ? <p>Sort Method: {data['Sort Method']}</p> : null}
+          <p>Startup Cost: {data['Startup Cost']}</p>
+          <p>Total Cost: {data['Total Cost']}</p>
+          <p>Startup Time: {data['Actual Startup Time']}</p>
+          <p>Total Time: {data['Actual Total Time']}</p>
+          <p>No. of Buffers: {data['Shared Hit Blocks']}</p>
+          <p>Buffer Size: {data['Shared Hit Blocks']*8}</p>
+          <p>Actual Rows: {data['Actual Rows']*8}</p>
           </div>);
       } else {
         generalContent = (
           <div>
           <p>Startup Cost: {data['Startup Cost']}</p>
-           <p>Total Cost: {data['Total Cost']}</p>
+          <p>Total Cost: {data['Total Cost']}</p>
+          <p>Startup Time: {data['Actual Startup Time']}</p>
+          <p>Total Time: {data['Actual Total Time']}</p>
+          <p>No. of Buffers: {data['Shared Hit Blocks']}</p>
+          <p>Buffer Size: {data['Shared Hit Blocks']*8}</p>
+          <p>Actual Rows: {data['Actual Rows']*8}</p>
           </div>);
       }
 

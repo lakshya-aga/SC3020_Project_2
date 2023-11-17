@@ -155,8 +155,9 @@ const Datablocks = ({ data }) => {
                         aria-valuenow={fillPercentage}
                         aria-valuemin="0"
                         aria-valuemax="100"
-                      ></div>
+                      ></div> <span style={{ color: 'black' }}>{`${fillPercentage.toFixed(2)}%`}</span>
                     </div>
+                    <div style={{ fontSize: 12.5}}>Block Capacity: {maxTuples[tablename]} Tuples</div>
                     <div className="text-center">
                     <button
                       type="button"
