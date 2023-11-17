@@ -36,10 +36,13 @@ function Login() {
         navigate('/');
       } else {
         // Handle login failure here (display error message, etc.)
+
+
         console.error('Authentication failed');
       }
     } catch (error) {
       // Handle network errors or other exceptions here
+      alert("Enter valid authentication details")
       console.error('Error:', error);
     }
   };

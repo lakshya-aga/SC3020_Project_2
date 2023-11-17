@@ -26,9 +26,11 @@ const SqlQueryInput = ({ onReceiveJsonData }) => {
         console.log(jsonData)
         onReceiveJsonData(jsonData);
       } else {
+        alert("Enter a valid query")
         console.error('Failed');
       }
     } catch (error) {
+      alert("Enter a valid query")
       console.error('Error:', error);
     } finally {
       setLoading(false); // Set loading to false when the query is complete
