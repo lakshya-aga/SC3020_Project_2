@@ -145,6 +145,8 @@ class ExplainService(Resource):
         dbName = data["dbName"]
         dbUser = data["dbUser"]
         dbPassword = data["dbPassword"]
+        tableSchema = data["tableSchema"]
+
 
         # dbHostIP = requestJSON.get("dbHostIP")
         # dbPort = requestJSON.get("dbPort")
@@ -166,8 +168,6 @@ class ExplainService(Resource):
 
         #
         cursor = conn.cursor()
-        # set schema if passed
-        tableSchema = requestJSON.get("tableSchema")
         if tableSchema is not None:
             cursor.execute("SET search_path TO " + tableSchema)
 
@@ -434,10 +434,16 @@ def analyze_node(node):
         else:
             subplanPos = predicateVar.find("SubPlan ")
             if subplanPos >= 0:
-                if predicateVar.find("hashed SubPlan ") > 0:
+                if predicateVar.find("hashed SubPlan ") >= 0:
                     subplanPos = predicateVar.find("hashed SubPlan ")
-                    subplanNum = int(predicateVar[subplanPos + 15: subplanPos + 16])
-                    predicateVar = '#SUBPLAN#' + predicateVar[0: subplanPos] + subplans[subplanNum - 1] + predicateVar[subplanPos + 16:]
+                    # a special case where predicate with " Colum NOT IN is (Subquery)" had Filter simply represented as (NOT (hashed SubPlan 1))
+                    if predicateVar.find("NOT (hashed") >= 0 :
+                        subplanPos = predicateVar.find("NOT (hashed SubPlan ")
+                        subplanNum = int(predicateVar[subplanPos + 20: subplanPos + 21])
+                        predicateVar = '#SUBPLAN#' + "( " + node["Output"][-1] + " NOT IN " + predicateVar[0: subplanPos] + subplans[subplanNum - 1] + predicateVar[subplanPos + 21:]
+                    else:
+                        subplanNum = int(predicateVar[subplanPos + 15: subplanPos + 16])
+                        predicateVar = '#SUBPLAN#' + predicateVar[0: subplanPos] + subplans[subplanNum - 1] + predicateVar[subplanPos + 16:]
                 else:
                     subplanNum = int(predicateVar[subplanPos + 8: subplanPos + 9])
                     predicateVar = '#SUBPLAN#' + predicateVar[0: subplanPos] + subplans[subplanNum - 1] + predicateVar[subplanPos + 9:]
