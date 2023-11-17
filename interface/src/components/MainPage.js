@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import SqlQueryInput from './QueryInput';
 import DataBlocks from './DataBlocks';
-import OrgChartTree from '../QepVisualization';
+import OrgChartTree from './QepVisualization';
 
 function MainPage() {
   const [jsonData, setJsonData] = useState('');
