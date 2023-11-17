@@ -58,6 +58,17 @@ class ValidateDBConnection(Resource):
             response.status_code = 400
             return response
 
+        cursor = conn.cursor()
+
+        # We need a type defintiionc "TableBlockTuple". If authentication is successful then create type. Ignore if it fails with exception
+        try :
+            cursor.execute("CREATE TYPE TableBlockTuple AS ( block text ,tupleCount text )")
+            conn.commit()
+        except Exception as err:
+            if not str(err).find("already exits"):
+                response = jsonify({'message': str(err)})
+                response.status_code = 400
+                return response
         #
         tableSchema = requestJSON.get("tableSchema")
         if tableSchema is None:
@@ -65,7 +76,6 @@ class ValidateDBConnection(Resource):
             # response.status_code = 200
             return response
         #
-        cursor = conn.cursor()
         #create a temp table and select pg_relation_size and that should give the block size info
         blockSizeSQL = "CREATE TEMP TABLE tempBlkSize AS SELECT 1 AS id;SELECT pg_relation_size('pg_temp.tempBlkSize');"
         try:
@@ -156,7 +166,11 @@ class ExplainService(Resource):
 
         #
         cursor = conn.cursor()
-        cursor.execute("SET search_path TO tpch1g")
+        # set schema if passed
+        tableSchema = requestJSON.get("tableSchema")
+        if tableSchema is not None:
+            cursor.execute("SET search_path TO " + tableSchema)
+
         try:
             cursor.execute(explainQuerySQL)
         except Exception as err:
