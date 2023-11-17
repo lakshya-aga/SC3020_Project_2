@@ -21,7 +21,7 @@ function MainPage() {
           {jsonData && <DataBlocks data={jsonData}/>}
         </div>
         <div className="col-md-7">
-          <h4 className="mb-2 text-center">QEP Tree</h4>
+          <h4 className="mb-2 text-center">Query Execution Plan Tree</h4>
           <div style={{ height: '620px', overflowY: 'auto', border: '1px solid #e9e9e9', borderRadius: '5px', padding: '10px' }}>
             {jsonData && <OrgChartTree data={jsonData} />}
           </div>
