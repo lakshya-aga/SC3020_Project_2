@@ -21,6 +21,7 @@ npm install
 
 Run the backend and frontend servers using 
 ````
+cd ..
 python3 project.py
 ````
 
