@@ -228,7 +228,13 @@ class ExplainService(Resource):
                 tableNames += (tableName,)
                 tableAliases += (tableAlias,)
 
-            if node["Node Type"] not in ignoreNodes and not "Subplan Name" in node:
+            skipNodeProcessing = False
+            if node["Node Type"] in ignoreNodes:
+                skipNodeProcessing = True
+            if node["Node Type"] == "Aggregate" and "Subplan Name" in node:
+                skipNodeProcessing = True
+
+            if not skipNodeProcessing:
                 blocksSQL = " Select json_agg(row_to_json(blocktuple)) from ( "
                 tupleSQL = " Select json_agg(row_to_json(blocktuple)) from ( "
                 for tabix, table in enumerate(tableList):
