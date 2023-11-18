@@ -475,7 +475,10 @@ def analyze_node(node):
             # subplanName = predicateVar[subplanPos: subplanPos + 10]
             subplanNum = int(predicateVar[subplanPos + 8: subplanPos + 9])
             predicateVar = '#SUBPLAN#' + predicateVar[0: subplanPos] + subplans[subplanNum - 1] + predicateVar[subplanPos + 9: ]
-            predicateList += (predicateVar,);
+            predicateList += (predicateVar,)
+        else:
+            if predicateVar not in predicateList:
+                predicateList += (predicateVar,)
 
     if ("Subplan Name" in node and not mainPlanProcessing):
         subplanName = node["Subplan Name"]
