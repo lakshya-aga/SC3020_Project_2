@@ -286,6 +286,8 @@ const OrgChart = ({ data }) => {
             </div>
             </div>
       );
+
+      setActiveTab('general');
       setGeneralContent(generalContent);
       setIntermediateContent(intermediateContent);
       setShowModal(true);
@@ -295,7 +297,7 @@ const OrgChart = ({ data }) => {
     return () => {
       myChart.dispose();
     };
-  }, [dataChart, activeTab,displayedBlocks,displayedBlocks.start, displayedBlocks.end, maxBlocksToRender]);
+  }, [dataChart,activeTab,displayedBlocks,displayedBlocks.start, displayedBlocks.end, maxBlocksToRender]);
 
   const closeModal = () => {
     setShowModal(false);
@@ -337,7 +339,7 @@ const OrgChart = ({ data }) => {
                 onClick={() => setActiveTab('intermediate')}
                 role="button"
               >
-                Intermediate Results
+                Blocks Accessed
               </a>
             </li>
           )}
