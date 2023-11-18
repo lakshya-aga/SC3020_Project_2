@@ -228,13 +228,7 @@ class ExplainService(Resource):
                 tableNames += (tableName,)
                 tableAliases += (tableAlias,)
 
-            skipNodeProcessing = False
-            if node["Node Type"] in ignoreNodes:
-                skipNodeProcessing = True
-            if node["Node Type"] == "Aggregate" and "Subplan Name" in node:
-                skipNodeProcessing = True
-
-            if not skipNodeProcessing:
+            if node["Node Type"] not in ignoreNodes:
                 blocksSQL = " Select json_agg(row_to_json(blocktuple)) from ( "
                 tupleSQL = " Select json_agg(row_to_json(blocktuple)) from ( "
                 for tabix, table in enumerate(tableList):
@@ -380,9 +374,7 @@ def analyze_node(node):
     if 'Plans' in node.keys():
         for childnode in node['Plans']:
             # print("Drilling to ", childnode["nodeId"])
-            if ("Subplan Name" in node and mainPlanProcessing):  # Subplan query is already built.. so no need to traverse subplan tree
-                break
-            else:
+            if not ("Subplan Name" in childnode and mainPlanProcessing):
                 analyze_node(childnode)
 
     if node["Node Type"] in ignoreNodes:
