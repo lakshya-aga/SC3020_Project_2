@@ -218,7 +218,7 @@ const OrgChart = ({ data }) => {
       }
 
       const maxColumns = 3; // Maximum number of columns
-      const columnWidth = 9 / maxColumns; // Bootstrap column width calculation
+      const columnWidth = 9 / maxColumns; // Column width calculation
 
       const intermediateResultsAvailable = data.blocksAccessed && data.blocksAccessed[0];
   
@@ -312,12 +312,12 @@ const OrgChart = ({ data }) => {
         contentLabel="Node Information"
         style={{
           content: {
-            width: '45%', // Adjust the width as needed
-            height: '50%', // Adjust the height as needed
-            margin: 'auto', // Center the modal horizontally
+            width: '45%', 
+            height: '50%', 
+            margin: 'auto', 
           },
           overlay: {
-            backgroundColor: 'rgba(0, 0, 0, 0.5)', // Adjust the overlay background color and transparency
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', 
           },
         }}
       >

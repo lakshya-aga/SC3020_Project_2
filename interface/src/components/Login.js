@@ -39,8 +39,6 @@ function Login() {
         navigate('/app');
       } else {
         // Handle login failure here (display error message, etc.)
-
-
         console.error('Authentication failed');
       }
     } catch (error) {

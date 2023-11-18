@@ -5,7 +5,7 @@ import './LoadingScreen.css';
 
 const SqlQueryInput = ({ onReceiveJsonData }) => {
   const [sqlQuery, setSqlQuery] = useState('');
-  const [loading, setLoading] = useState(false); // New loading state
+  const [loading, setLoading] = useState(false); 
 
   const handleQueryChange = (event) => {
     setSqlQuery(event.target.value);

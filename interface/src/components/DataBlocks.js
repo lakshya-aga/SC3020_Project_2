@@ -4,7 +4,7 @@ import axios from 'axios';
 const DataBlockModal = ({ show, onHide, blockInfo, tuplesql }) => {
   const { tablename, aliasname, blockNum } = blockInfo;
   const [tupleData, setTupleData] = useState([]);
-  const [loading, setLoading] = useState(true); // New loading state
+  const [loading, setLoading] = useState(true); 
 
   useEffect(() => {
     const fetchData = async () => {
@@ -18,7 +18,7 @@ const DataBlockModal = ({ show, onHide, blockInfo, tuplesql }) => {
         });
 
         if (response.statusText === 'OK') {
-          // Assuming the tuple data is in response.data
+        
           setTupleData(response.data);
           console.log(response.data)
         } else {
@@ -27,7 +27,6 @@ const DataBlockModal = ({ show, onHide, blockInfo, tuplesql }) => {
       } catch (error) {
         console.error('Error:', error);
       }finally {
-        // Stop loading, whether the request was successful or not
         setLoading(false);
       }
     };
@@ -52,7 +51,7 @@ const DataBlockModal = ({ show, onHide, blockInfo, tuplesql }) => {
             <h5 className="modal-title text-center">List of Tuples</h5>
             <ul>
             {tupleData.flatMap((tupleArray) => (
-                // Access the primary key at index 0
+                
                 tupleArray.map((tuple) => (
                   <li key={tuple.tupleid} className="list-group-item">
                   {Object.keys(tuple)[1]} : {tuple[Object.keys(tuple)[1]]} 
@@ -75,7 +74,7 @@ const DataBlockModal = ({ show, onHide, blockInfo, tuplesql }) => {
 };
 
 const Datablocks = ({ data }) => {
-  // Set up state hooks outside any condition or loop
+  
   const [showModal, setShowModal] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState(null);
   const [displayedBlocks, setDisplayedBlocks] = useState({
@@ -89,12 +88,12 @@ const Datablocks = ({ data }) => {
   const blocksAccessed = data.blocksAccessed[0];
 
   const maxColumns = 3; // Maximum number of columns
-  const columnWidth = 12 / maxColumns; // Bootstrap column width calculation
+  const columnWidth = 12 / maxColumns; // column width calculation
 
-  const [resetKey, setResetKey] = useState(0); // Introduce a reset key
+  const [resetKey, setResetKey] = useState(0); 
 
   useEffect(() => {
-    // Reset displayedBlocks to original settings when tupleSQL changes
+  
     setDisplayedBlocks({
       start: 0,
       end: 100,
