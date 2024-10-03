@@ -1,4 +1,17 @@
-# SC3020_Project_2
+
+# PostgreSQL Query Plan Visualizer: 
+A React based web application, a tool for PostgreSQL query visualization using Python Flask framework to understand the SQL query execution plan, memory utlized and dissect access by sub-trees. It is designed with a custom sub querying backend algorithm to identify bottlenecks in the execution plan.  
+
+![photo_6289731459417750459_y](https://github.com/user-attachments/assets/c3021949-e736-4908-aef7-f8b4e94d2c24)
+
+![photo_6289731459417750455_y](https://github.com/user-attachments/assets/2c15bc53-0873-476b-8ddf-403fc1be1252)
+
+
+
+https://github.com/user-attachments/assets/0ff427f7-7b5b-472b-b66c-ad55279b03b3
+
+
+# To Run Application
 
 Create python virtual environment using and activate it (Optional)
 ````
@@ -40,7 +53,7 @@ Enter your Queries such as:
 select  l_returnflag,  l_linestatus,  sum(l_quantity) as sum_qty,  sum(l_extendedprice) as sum_base_price,  sum(l_extendedprice * (1-l_discount)) as sum_disc_price,  sum(l_extendedprice * (1-l_discount) * (1+l_tax)) as sum_charge,  avg(l_quantity) as avg_qty,  avg(l_extendedprice) as avg_price,  avg(l_discount) as avg_disc,  count(*) as count_order  from  lineitem  where  l_shipdate <= date '1998-01-12' - 90  group by  l_returnflag,  l_linestatus  order by  l_returnflag,  l_linestatus
 ```
 
-Notes:
+# Notes:
 
 We have assumed that you would be running your backend at port 5000, any variations to that will end up with errors in the frontend urls and therefore would require to be changed.
 
